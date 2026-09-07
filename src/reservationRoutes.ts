@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { pool } from './db';
 import { validateResource } from './validate';
-import { createBookingSchema, createWalkInSchema } from './schemas';
+import { createBookingSchema, createWalkInSchema, moveReservationSchema } from './schemas';
 import { nights } from './dates';
 import { toCentavos, toMoney } from './money';
 import { quoteStay } from './pricing';
@@ -339,6 +339,115 @@ router.post("/walk-in", validateResource(createWalkInSchema), async (req: Reques
     res.status(500).json({ error: 'Could not generate a confirmation code.' });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// POST — move a guest to a different room.
+//
+// The room a stay sits in is otherwise fixed at booking. It has to be movable
+// for the case that actually happens: a room goes out of service with guests
+// already in it or booked into it, and somebody has to put them somewhere.
+//
+// The bill follows the room. A folio that names room 402 and charges for a
+// standard is a folio nobody can check, and an earlier rule that held the price
+// on the way up while dropping it on the way down turned out to ratchet: move a
+// guest down then back up and they keep the cheap rate in the dear room.
+//
+// The exclusion constraint does the hard part: if the target room is taken for
+// these dates the UPDATE is refused outright with 23P01, so no check-then-write
+// race exists here either.
+router.post("/:id/move", validateResource(moveReservationSchema), async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { roomId } = req.body;
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const found = await client.query(
+      `SELECT "roomId", "status", "guestCount", "checkIn", "checkOut", "totalAmount"
+         FROM "Reservation" WHERE "id" = $1`,
+      [id]
+    );
+
+    if (found.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'That reservation no longer exists.' });
+    }
+
+    const stay = found.rows[0];
+
+    if (!['PENDING', 'CONFIRMED', 'CHECKED_IN'].includes(stay.status)) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        error: 'Only a live booking can be moved. That stay has already ended.',
+      });
+    }
+    if (stay.roomId === roomId) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'They are already in that room.' });
+    }
+
+    const target = await client.query(
+      `SELECT "capacity", "nightlyRate", "outOfService", "number"
+         FROM "Room" WHERE "id" = $1`,
+      [roomId]
+    );
+
+    if (target.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'That room does not exist.' });
+    }
+    if (target.rows[0].outOfService) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        error: `Room ${target.rows[0].number} is out of service.`,
+      });
+    }
+    if (stay.guestCount > target.rows[0].capacity) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        error: `Room ${target.rows[0].number} sleeps ${target.rows[0].capacity}, and this booking is for ${stay.guestCount}.`,
+      });
+    }
+
+    const quote = quoteStay(
+      target.rows[0].nightlyRate,
+      nights(stay.checkIn, stay.checkOut)
+    );
+
+    const moved = await client.query(
+      `UPDATE "Reservation"
+          SET "roomId" = $2, "totalAmount" = $3, "taxAmount" = $4
+        WHERE "id" = $1
+       RETURNING "confirmationCode"`,
+      [id, roomId, quote.total, quote.tax]
+    );
+
+    // Housekeeping follows them only if they are actually in the room.
+    if (stay.status === 'CHECKED_IN') {
+      await client.query(`UPDATE "Room" SET "status" = 'AVAILABLE' WHERE "id" = $1`, [stay.roomId]);
+      await client.query(`UPDATE "Room" SET "status" = 'OCCUPIED'  WHERE "id" = $1`, [roomId]);
+    }
+
+    await client.query('COMMIT');
+    res.json({
+      ok: true,
+      confirmationCode: moved.rows[0].confirmationCode,
+      // A downgrade on an already-paid stay leaves the guest in credit. The
+      // folio surfaces it as a refund due, because the balance goes negative.
+      newTotal: quote.total,
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    if ((error as { code?: string }).code === '23P01') {
+      return res.status(409).json({
+        error: 'That room is taken for these dates. Pick another.',
+      });
+    }
+    res.status(500).json({ error: (error as Error).message });
+  } finally {
+    client.release();
   }
 });
 

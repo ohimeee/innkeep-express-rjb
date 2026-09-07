@@ -183,3 +183,13 @@ export const createPaymentSchema = z.object({
 });
 
 export type PaymentInput = z.infer<typeof paymentBodySchema>;
+
+// Moving a guest to a different room.
+export const moveBodySchema = z.object({
+  roomId: z.string().min(1, "Pick a room to move them to."),
+});
+
+export const moveReservationSchema = z.object({
+  body: moveBodySchema,
+  params: z.object({ id: z.string().min(1) }),
+});
