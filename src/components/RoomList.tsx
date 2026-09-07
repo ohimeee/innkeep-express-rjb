@@ -40,7 +40,7 @@ export const RoomList: React.FC = () => {
   if (state.error)
     return (
       <p role="alert" className="py-10 text-orange-700">
-        Error: {state.error} — is the API running on port 4000?
+        Error: {state.error} — is the API running on port 3000?
       </p>
     );
 

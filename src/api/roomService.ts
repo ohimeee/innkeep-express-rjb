@@ -1,7 +1,7 @@
 import type { Room, RoomStatus, RoomType } from "../types";
 import { toSearchParams, type RoomQuery } from "../search";
 
-const API_BASE = 'http://localhost:4000/api';
+const API_BASE = 'http://localhost:3000/api';
 
 // GET — the catalog, filtered by dates and guest count when they are given.
 export const fetchRooms = async (query: RoomQuery): Promise<Room[]> => {

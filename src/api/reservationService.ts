@@ -4,7 +4,7 @@ import type {
   ReservationDetail,
 } from "../types";
 
-const API_BASE = 'http://localhost:4000/api';
+const API_BASE = 'http://localhost:3000/api';
 
 export const fetchReservations = async (): Promise<Reservation[]> => {
   const response = await fetch(`${API_BASE}/reservations`);

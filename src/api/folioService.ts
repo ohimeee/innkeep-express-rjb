@@ -1,6 +1,6 @@
 import type { ChargeDepartment, Folio, PaymentMethod } from "../types";
 
-const API_BASE = 'http://localhost:4000/api';
+const API_BASE = 'http://localhost:3000/api';
 
 // Keyed on the confirmation code — what the guest reads off their phone and
 // what the front desk types, so a folio URL is something a person can reach.
