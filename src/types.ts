@@ -1,6 +1,6 @@
-// The database enums, mirrored in TypeScript. The API's `db/schema.sql` is the
-// source of truth; these exist so a component can name a room type without a
-// generated client.
+// The database enums, mirrored here. The API's db/schema.sql is the source of
+// truth; these exist so a component can name a room type without a generated
+// client, and so a <select> can list the options.
 
 export const ROOM_TYPES = ["STANDARD", "DELUXE", "SUITE"] as const;
 export type RoomType = (typeof ROOM_TYPES)[number];
@@ -8,9 +8,10 @@ export type RoomType = (typeof ROOM_TYPES)[number];
 export const ROOM_STATUSES = ["AVAILABLE", "OCCUPIED"] as const;
 export type RoomStatus = (typeof ROOM_STATUSES)[number];
 
+// PENDING is a room held while the guest is at the payment gateway. It blocks
+// availability exactly like a confirmed stay until the webhook promotes it or
+// the hold expires.
 export const RESERVATION_STATUSES = [
-  // A room held while the guest is at the payment gateway. Blocks availability
-  // exactly like a confirmed stay until the webhook promotes it or it expires.
   "PENDING",
   "CONFIRMED",
   "CHECKED_IN",
@@ -19,17 +20,52 @@ export const RESERVATION_STATUSES = [
 ] as const;
 export type ReservationStatus = (typeof RESERVATION_STATUSES)[number];
 
-/** SUITE -> Suite */
+export const PAYMENT_METHODS = [
+  "CASH",
+  "CARD",
+  "GCASH",
+  "MAYA",
+  "GRABPAY",
+  "TRANSFER",
+] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+// Which department an incidental charge came from. The front desk posts most
+// of them, so it is the fallback rather than a separate "unknown".
+export const CHARGE_DEPARTMENTS = [
+  "FNB",
+  "HOUSEKEEPING",
+  "TRANSPORT",
+  "FRONT_DESK",
+  "OTHER",
+] as const;
+export type ChargeDepartment = (typeof CHARGE_DEPARTMENTS)[number];
+
+// SUITE -> Suite
 export const typeLabel = (type: RoomType): string =>
   type.charAt(0) + type.slice(1).toLowerCase();
 
-/**
- * A room as `GET /api/rooms` returns it.
- *
- * `nightlyRate` is a string, not a number. Postgres hands `NUMERIC` back as a
- * string and the API keeps it that way — see money.ts for why.
- */
-export type Room = {
+// "FNB" is not a word.
+export const DEPARTMENT_LABELS: Record<ChargeDepartment, string> = {
+  FNB: "F&B",
+  HOUSEKEEPING: "Housekeeping",
+  TRANSPORT: "Transport",
+  FRONT_DESK: "Front desk",
+  OTHER: "Other",
+};
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  CASH: "Cash",
+  CARD: "Card",
+  GCASH: "GCash",
+  MAYA: "Maya",
+  GRABPAY: "GrabPay",
+  TRANSFER: "Bank transfer",
+};
+
+// nightlyRate is a string, not a number. Postgres hands NUMERIC back as a
+// string and the API keeps it that way — see money.ts for why.
+export interface Room {
   id: string;
   number: string;
   name: string;
@@ -40,4 +76,94 @@ export type Room = {
   imageUrl: string | null;
   status: RoomStatus;
   nightlyRate: string;
-};
+}
+
+// Dates arrive as YYYY-MM-DD strings; timestamps arrive as ISO strings and
+// become Date objects only at the point of display.
+export interface Reservation {
+  id: string;
+  confirmationCode: string;
+  guestName: string;
+  guestCount: number;
+  checkIn: string;
+  checkOut: string;
+  nights: number;
+  status: ReservationStatus;
+  totalAmount: string;
+  holdExpiresAt: string | null;
+  checkedInAt: string | null;
+  checkedOutAt: string | null;
+  roomNumber: string;
+  roomName: string;
+  roomType: RoomType;
+  // "201 · Courtyard Deluxe", the one-line room label the tables use.
+  roomLabel: string;
+}
+
+// A departure carries what is still owed — the number the desk actually needs.
+export interface Departure extends Reservation {
+  balance: string;
+  owing: boolean;
+}
+
+export interface DashboardData {
+  arrivals: Reservation[];
+  departures: Departure[];
+  inHouseGuests: number;
+  occupiedRooms: number;
+  totalRooms: number;
+  occupancyPercent: number;
+  arrivedCount: number;
+  balancesToSettle: number;
+}
+
+export interface FolioCharge {
+  id: string;
+  createdAt: string;
+  description: string;
+  department: ChargeDepartment;
+  postedBy: string | null;
+  amount: string;
+}
+
+export interface FolioPayment {
+  id: string;
+  paidAt: string;
+  amount: string;
+  method: PaymentMethod;
+  cardLast4: string | null;
+}
+
+// roomTotal is the stay ex-VAT and tax is what was frozen at booking. Neither
+// is recomputed from the room's current rate — a rate changed later must not
+// rewrite a bill somebody has already paid. Incidentals carry no VAT of their
+// own; they are posted VAT-inclusive.
+export interface FolioTotals {
+  roomTotal: string;
+  tax: string;
+  incidentals: string;
+  paid: string;
+  balance: string;
+  // True when nothing is owed, which is what unlocks check-out.
+  settled: boolean;
+}
+
+export interface Folio {
+  id: string;
+  confirmationCode: string;
+  guestName: string;
+  guestCount: number;
+  checkIn: string;
+  checkOut: string;
+  nights: number;
+  status: ReservationStatus;
+  checkedInAt: string | null;
+  checkedOutAt: string | null;
+  nightlyRate: string;
+  roomNumber: string;
+  roomName: string;
+  roomType: RoomType;
+  charges: FolioCharge[];
+  payments: FolioPayment[];
+  totals: FolioTotals;
+}

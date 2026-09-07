@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 
-const InfoBar = () => {
+export const InfoBar: React.FC = () => {
   return (
     <div className="my-5 flex flex-col divide-y-2 divide-gray-400 border-2 border-gray-400 sm:flex-row sm:divide-x-2 sm:divide-y-0">
       <div className="flex-3 p-3">
@@ -23,4 +23,3 @@ const InfoBar = () => {
   );
 };
 
-export default InfoBar;

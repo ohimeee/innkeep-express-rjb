@@ -2,8 +2,13 @@ import { Link } from "react-router-dom";
 import { UserRound } from "lucide-react";
 import { MoveRight } from "lucide-react";
 
-import { formatPeso } from "../../money";
-import { typeLabel, type Room } from "../../types";
+import { formatPeso } from "../money";
+import { typeLabel, type Room } from "../types";
+
+interface RoomCardProps {
+  room: Room;
+  href: string;
+}
 
 /**
  * One room on the catalog.
@@ -12,7 +17,7 @@ import { typeLabel, type Room } from "../../types";
  * version had the server attach a `nightlyRateLabel`; the API returns the raw
  * `NUMERIC` string instead, and formatting stays a display concern.
  */
-const RoomCard = ({ room, href }: { room: Room; href: string }) => {
+export const RoomCard: React.FC<RoomCardProps> = ({ room, href }) => {
   return (
     <div className="relative flex aspect-6/5 w-full flex-col">
       <div className="absolute top-0 left-0 bg-orange-500 p-2 text-xs font-semibold tracking-widest text-white">
@@ -61,4 +66,3 @@ const RoomCard = ({ room, href }: { room: Room; href: string }) => {
   );
 };
 
-export default RoomCard;

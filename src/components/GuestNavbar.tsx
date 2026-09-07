@@ -1,6 +1,6 @@
-import NavLink from "../NavLink";
+import { NavLink } from "./NavLink";
 
-const Navbar = () => {
+export const GuestNavbar: React.FC = () => {
   return (
     <nav className="flex items-center justify-between border-b bg-white px-8 py-2 text-black">
       <h1 className="text-lg font-bold tracking-tight">InnKeep Express</h1>
@@ -14,4 +14,3 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
