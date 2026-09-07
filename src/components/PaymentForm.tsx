@@ -67,7 +67,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         // display only for a gateway settlement.
         const { invoiceUrl } = await settleBalance(reservationId);
         window.open(invoiceUrl, "_blank", "noopener");
-        setSaved("Payment link opened — the folio updates once Xendit confirms");
+        setSaved("Payment link opened — this folio updates when you come back to it");
         setOpen(false);
       }
     } catch (caught) {

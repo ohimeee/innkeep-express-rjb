@@ -107,6 +107,29 @@ export const FolioPage: React.FC = () => {
     loadFolio();
   }, [loadFolio]);
 
+  // Refetch whenever this tab comes back to the front.
+  //
+  // A gateway settlement is paid in another tab, and the money lands here via
+  // Xendit's webhook seconds or minutes later — there is no moment in this
+  // component's lifecycle to hang a refetch on. Switching back from the payment
+  // page is exactly when the balance needs to be right, so that is the signal.
+  //
+  // It also covers the ordinary case of two people at the desk: a charge posted
+  // on the other terminal shows up as soon as this one is looked at again.
+  useEffect(() => {
+    const refetchWhenVisible = () => {
+      if (document.visibilityState === "visible") loadFolio();
+    };
+
+    document.addEventListener("visibilitychange", refetchWhenVisible);
+    window.addEventListener("focus", loadFolio);
+
+    return () => {
+      document.removeEventListener("visibilitychange", refetchWhenVisible);
+      window.removeEventListener("focus", loadFolio);
+    };
+  }, [loadFolio]);
+
   if (state.loading)
     return <p className="py-10 text-[#201e1d]/55">Loading folio...</p>;
 
