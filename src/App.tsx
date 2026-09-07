@@ -6,7 +6,10 @@ import { Sidebar } from "./components/Sidebar";
 import { RoomProvider } from "./context/RoomContext";
 import { ReservationProvider } from "./context/ReservationContext";
 import { CatalogPage } from "./pages/CatalogPage";
+import { DashboardPage } from "./pages/DashboardPage";
+import { FolioPage } from "./pages/FolioPage";
 import { ReservationsPage } from "./pages/ReservationsPage";
+import { RoomsPage } from "./pages/RoomsPage";
 
 // The guest shell — navbar plus whichever page is routed beneath it.
 const GuestLayout: React.FC<{ children: ReactNode }> = ({ children }) => (
@@ -16,14 +19,16 @@ const GuestLayout: React.FC<{ children: ReactNode }> = ({ children }) => (
   </>
 );
 
-// The staff shell. Unguarded for now — auth is the last phase, and nothing
-// else depends on it. See IMPLEMENTATION2.md section 6.
+// The staff shell. Unguarded for now — auth is the last phase and nothing else
+// depends on it. See IMPLEMENTATION2.md section 6.
 const AdminLayout: React.FC<{ children: ReactNode }> = ({ children }) => (
   <div className="flex">
     <Sidebar />
     <main className="p-8">{children}</main>
   </div>
 );
+
+const admin = (page: ReactNode) => <AdminLayout>{page}</AdminLayout>;
 
 function MainApp() {
   return (
@@ -37,13 +42,12 @@ function MainApp() {
             </GuestLayout>
           }
         />
+        <Route path="/admin" element={admin(<DashboardPage />)} />
+        <Route path="/admin/rooms" element={admin(<RoomsPage />)} />
+        <Route path="/admin/reservations" element={admin(<ReservationsPage />)} />
         <Route
-          path="/admin/reservations"
-          element={
-            <AdminLayout>
-              <ReservationsPage />
-            </AdminLayout>
-          }
+          path="/admin/reservations/:code"
+          element={admin(<FolioPage />)}
         />
       </Routes>
     </BrowserRouter>
