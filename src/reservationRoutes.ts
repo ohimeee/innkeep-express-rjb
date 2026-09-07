@@ -114,7 +114,7 @@ router.get("/code/:code", async (req: Request, res: Response) => {
     }
 
     const row = result.rows[0];
-    const ledger = await readLedger(row.id, row.totalAmount, row.taxAmount);
+    const ledger = await readLedger(row.id, row.totalAmount, row.taxAmount, row.status);
 
     // postedBy is stripped. It names the staff member who put a line on the
     // bill, which the front desk needs for a disputed charge and the guest has

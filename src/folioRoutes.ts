@@ -30,7 +30,8 @@ const sumCentavos = (amounts: string[]) =>
 export const readLedger = async (
   reservationId: string,
   totalAmount: string,
-  taxAmount: string
+  taxAmount: string,
+  status: string
 ) => {
   const charges = await pool.query(
     `SELECT "id", "createdAt", "description", "department", "postedBy", "amount"
@@ -44,8 +45,16 @@ export const readLedger = async (
     [reservationId]
   );
 
-  const taxCentavos = toCentavos(taxAmount);
-  const roomCentavos = toCentavos(totalAmount) - taxCentavos;
+  // A cancelled stay never happened, so the room is not chargeable — dropping
+  // it turns whatever was paid into a credit the hotel owes back.
+  //
+  // A no-show is the opposite: the charge stands. That is the policy the guest
+  // agreed to by prepaying, and it is the whole reason the two are separate
+  // statuses rather than one "did not stay".
+  const cancelled = status === "CANCELLED";
+
+  const taxCentavos = cancelled ? 0 : toCentavos(taxAmount);
+  const roomCentavos = cancelled ? 0 : toCentavos(totalAmount) - taxCentavos;
   const incidentalCentavos = sumCentavos(charges.rows.map((c) => c.amount));
   const paidCentavos = sumCentavos(payments.rows.map((p) => p.amount));
   const balanceCentavos =
@@ -61,6 +70,9 @@ export const readLedger = async (
       paid: fromCentavos(paidCentavos),
       balance: fromCentavos(balanceCentavos),
       settled: balanceCentavos <= 0,
+      // Money the hotel is holding for a stay that will not happen. Zero on a
+      // normal folio; the amount paid on a cancelled one.
+      refundDue: fromCentavos(Math.max(0, -balanceCentavos)),
     },
   };
 };
@@ -92,7 +104,7 @@ router.get("/:code", async (req: Request, res: Response) => {
 
     const row = found.rows[0];
 
-    const ledger = await readLedger(row.id, row.totalAmount, row.taxAmount);
+    const ledger = await readLedger(row.id, row.totalAmount, row.taxAmount, row.status);
 
     res.json({
       ...row,
