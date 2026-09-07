@@ -14,7 +14,11 @@ VALUES
   ('202', 'Courtyard Deluxe',  'DELUXE',   2, ARRAY['Queen bed', 'Courtyard view', 'Minibar'],  'Queen bed | Courtyard view | Sleeps 2',      6400, 'AVAILABLE'),
   ('305', 'Loft Deluxe',       'DELUXE',   3, ARRAY['King bed', 'Workspace', 'Free breakfast'], 'King bed | Loft workspace | Sleeps 3',       7100, 'AVAILABLE'),
   ('104', 'Harbor Standard',   'STANDARD', 2, ARRAY['Twin beds', 'City view'],                  'Twin beds | City view | Sleeps 2',           4200, 'AVAILABLE'),
-  ('103', 'Archive Standard',  'STANDARD', 1, ARRAY['Single bed', 'Reading nook'],              'Single bed | Reading nook | Sleeps 1',       3600, 'AVAILABLE')
+  ('103', 'Archive Standard',  'STANDARD', 1, ARRAY['Single bed', 'Reading nook'],              'Single bed | Reading nook | Sleeps 1',       3600, 'AVAILABLE'),
+  -- A second room sleeping four. With only one, a party of four had nowhere to
+  -- go if it broke or was already taken — no fallback for the largest booking
+  -- the app accepts.
+  ('502', 'Harbour Suite',     'SUITE',    4, ARRAY['2 bedrooms', 'Sea view', 'Free breakfast'], 'Two bedrooms | Sea view | Sleeps 4',          9800, 'AVAILABLE')
 
 -- Every room seeds AVAILABLE, and "status" is deliberately absent from the
 -- update list below.
