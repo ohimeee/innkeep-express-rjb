@@ -157,8 +157,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
           }
           className={`${FIELD_CLASSES} appearance-none`}
         >
-          <option value="CASH">Cash at the desk</option>
-          <option value="ONLINE">Pay online — card, e-wallet or bank</option>
+          <option value="CASH">Pay cash</option>
+          <option value="ONLINE">Pay online</option>
         </select>
         {isCash ? null : (
           <p className="text-[11px] leading-snug text-[#201e1d]/55">
