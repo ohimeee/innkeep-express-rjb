@@ -80,3 +80,26 @@ export const fetchReservationByCode = async (
   if (!response.ok) throw new Error('No booking matches that code');
   return response.json();
 };
+
+export interface WalkIn extends NewBooking {
+  // A walk-in is checked in on the spot. Unticked, this books a stay for
+  // later — someone phoning ahead.
+  checkInNow: boolean;
+}
+
+// Take a stay at the front desk. No hold and no invoice: the guest is standing
+// there, so there is nothing to reserve them against and nobody to wait for.
+// The room charge lands on the folio and check-out refuses to release anyone
+// who still owes, so the money is collected at the right moment either way.
+export const createWalkIn = async (walkIn: WalkIn): Promise<Reservation> => {
+  const response = await fetch(`${API_BASE}/reservations/walk-in`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(walkIn),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.details?.[0]?.message ?? body.error ?? 'Failed to take the booking');
+  }
+  return response.json();
+};
