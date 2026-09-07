@@ -87,6 +87,9 @@ export const ConfirmationPage: React.FC = () => {
   const failed = searchParams.get("payment") === "failed";
   const { totals, charges } = reservation;
   const settled = totals.settled;
+  // Money the hotel is holding for a stay that will not happen. Only a
+  // cancellation produces one — a no-show keeps what was paid.
+  const refunding = totals.refundDue !== "0.00";
   const stayNights = nights(reservation.checkIn, reservation.checkOut);
   const quote = quoteStay(reservation.nightlyRate, stayNights);
 
@@ -286,11 +289,22 @@ export const ConfirmationPage: React.FC = () => {
             <div className="flex flex-col py-5">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm">Room &amp; taxes</span>
+                {/* totals.roomTotal, not the booking's frozen totalAmount — a
+                    cancelled stay is not chargeable, so this reads ₱0 there
+                    while the payment below turns into a refund. */}
                 <span className="text-sm font-bold">
-                  {formatPeso(reservation.totalAmount)}
+                  {formatPeso(totals.roomTotal)}
                 </span>
               </div>
-          {charges.length > 0 ? (
+              {totals.tax !== "0.00" ? (
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm">Taxes &amp; fees</span>
+                  <span className="text-sm font-bold">
+                    {formatPeso(totals.tax)}
+                  </span>
+                </div>
+              ) : null}
+              {charges.length > 0 ? (
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-sm">Extras</span>
                   <span className="text-sm font-bold">
@@ -305,16 +319,24 @@ export const ConfirmationPage: React.FC = () => {
                 </span>
               </div>
               <p className="text-xl font-bold">
-                {settled ? "Total paid" : "Balance due"}
+                {refunding
+                  ? "Refund due"
+                  : settled
+                    ? "Total paid"
+                    : "Balance due"}
               </p>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-500">
-                  Incl. taxes &amp; fees | PHP
+                  {refunding
+                    ? "Back to your original payment method"
+                    : "Incl. taxes & fees | PHP"}
                 </span>
                 <span className="text-3xl font-bold text-orange-500">
-                  {settled
-                    ? formatPeso(totals.paid)
-                    : formatPeso(totals.balance)}
+                  {refunding
+                    ? formatPeso(totals.refundDue)
+                    : settled
+                      ? formatPeso(totals.paid)
+                      : formatPeso(totals.balance)}
                 </span>
               </div>
             </div>
