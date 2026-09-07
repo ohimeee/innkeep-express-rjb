@@ -10,8 +10,9 @@
 
 @baseUrl = http://localhost:3000/api
 
-# From .env — only the webhook needs it.
-@callbackToken = PASTE_XENDIT_CALLBACK_TOKEN_HERE
+# {{callbackToken}} comes from .vscode/settings.json, which is gitignored.
+# Pick the "local" environment in the status bar. Never paste the token here —
+# this file is committed.
 
 # Real ids from the seeded database.
 @roomId = 3c098f7a-4ab5-4a17-96e7-890225b9872c

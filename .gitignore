@@ -2,3 +2,6 @@ node_modules
 dist
 .env
 *.log
+
+# holds the webhook token for api.http
+.vscode/
