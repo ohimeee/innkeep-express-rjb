@@ -222,6 +222,30 @@ router.post("/", validateResource(createBookingSchema), async (req: Request, res
   }
 });
 
+// Nobody may be checked in to a room that already has someone in it.
+//
+// The exclusion constraint guards *dates*, and back-to-back stays are legal —
+// a guest leaving on the 7th does not block an arrival on the 7th. But that
+// only holds if the first guest actually leaves. An overstay makes the two
+// stays simultaneous in the one way that matters, and no date range can see it.
+const occupantOf = async (
+  run: (text: string, params?: any[]) => Promise<{ rows: any[] }>,
+  roomId: string,
+  excludeReservationId?: string
+) => {
+  const held = await run(
+    `SELECT res."confirmationCode", res."guestName", r."number" AS "roomNumber"
+       FROM "Reservation" res
+       JOIN "Room" r ON r."id" = res."roomId"
+      WHERE res."roomId" = $1
+        AND res."status" = 'CHECKED_IN'
+        AND ($2::text IS NULL OR res."id" <> $2)
+      LIMIT 1`,
+    [roomId, excludeReservationId ?? null]
+  );
+  return held.rows[0];
+};
+
 // POST — take a stay at the front desk.
 //
 // A walk-in has no hold and no invoice. A hold exists to keep a room while a
@@ -330,6 +354,29 @@ router.post("/:id/check-in", async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+
+    const booked = await client.query(
+      `SELECT "roomId" FROM "Reservation" WHERE "id" = $1`,
+      [id]
+    );
+
+    if (booked.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'That reservation no longer exists.' });
+    }
+
+    const occupant = await occupantOf(
+      (t, v) => client.query(t, v),
+      booked.rows[0].roomId,
+      String(id)
+    );
+
+    if (occupant) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        error: `Room ${occupant.roomNumber} still has ${occupant.guestName} in it (${occupant.confirmationCode}). Check them out first.`,
+      });
+    }
 
     const updated = await client.query(
       `UPDATE "Reservation"
