@@ -167,3 +167,21 @@ export interface Folio {
   payments: FolioPayment[];
   totals: FolioTotals;
 }
+
+// A reservation joined to its room, for the confirmation page. taxAmount and
+// totalAmount are what was frozen at booking, not a recomputation.
+export interface ReservationDetail {
+  id: string;
+  confirmationCode: string;
+  guestName: string;
+  guestCount: number;
+  checkIn: string;
+  checkOut: string;
+  status: ReservationStatus;
+  totalAmount: string;
+  taxAmount: string;
+  roomName: string;
+  roomNumber: string;
+  roomType: RoomType;
+  nightlyRate: string;
+}
