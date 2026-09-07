@@ -52,3 +52,20 @@ export const recordPayment = async (
     throw new Error(body.details?.[0]?.message ?? body.error ?? 'Failed to record payment');
   }
 };
+
+// Open a Xendit invoice for whatever the folio still owes.
+//
+// The amount is computed on the API from the ledger — nothing is sent from
+// here, because a total posted by the client is never trusted.
+export const settleBalance = async (
+  reservationId: string
+): Promise<{ invoiceUrl: string }> => {
+  const response = await fetch(`${API_BASE}/folio/${reservationId}/settle`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error ?? 'Failed to open a payment link');
+  }
+  return response.json();
+};

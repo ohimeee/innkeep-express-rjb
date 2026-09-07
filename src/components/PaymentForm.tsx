@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { recordPayment } from "../api/folioService";
+import { recordPayment, settleBalance } from "../api/folioService";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "../types";
 import type { PaymentMethod } from "../types";
 import { Spinner } from "./Spinner";
@@ -33,6 +33,13 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState("");
+  // Cash is the only method the desk can simply assert — the money is in the
+  // drawer and somebody watched it arrive. Every other method has to move
+  // through the gateway, so the folio can prove it rather than take a word
+  // for it.
+  const [method, setMethod] = useState<PaymentMethod>("CASH");
+
+  const isCash = method === "CASH";
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -44,14 +51,23 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
     setSaved("");
 
     try {
-      await recordPayment(reservationId, {
-        amount: String(data.get("amount") ?? ""),
-        method: String(data.get("method") ?? "CASH") as PaymentMethod,
-      });
-      form.reset();
-      setSaved("Payment recorded");
-      setOpen(false);
-      onRecorded();
+      if (isCash) {
+        await recordPayment(reservationId, {
+          amount: String(data.get("amount") ?? ""),
+          method,
+        });
+        form.reset();
+        setSaved("Payment recorded");
+        setOpen(false);
+        onRecorded();
+      } else {
+        // The balance comes from the API, not this form — the amount field is
+        // display only for a gateway settlement.
+        const { invoiceUrl } = await settleBalance(reservationId);
+        window.open(invoiceUrl, "_blank", "noopener");
+        setSaved("Payment link opened — the folio updates once Xendit confirms");
+        setOpen(false);
+      }
     } catch (caught) {
       setError((caught as Error).message);
     } finally {
@@ -119,7 +135,10 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
           name="amount"
           inputMode="decimal"
           defaultValue={balance}
-          className={`${FIELD_CLASSES} tabular-nums`}
+          readOnly={!isCash}
+          className={`${FIELD_CLASSES} tabular-nums ${
+            isCash ? "" : "text-[#201e1d]/55"
+          }`}
         />
       </div>
 
@@ -130,7 +149,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         <select
           id="payment-method"
           name="method"
-          defaultValue="CASH"
+          value={method}
+          onChange={(event) => setMethod(event.target.value as PaymentMethod)}
           className={`${FIELD_CLASSES} appearance-none`}
         >
           {PAYMENT_METHODS.map((method) => (
@@ -139,6 +159,12 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
             </option>
           ))}
         </select>
+        {isCash ? null : (
+          <p className="text-[11px] leading-snug text-[#201e1d]/55">
+            The guest pays the full balance on their phone. The folio updates
+            when Xendit confirms — it does not clear on this click.
+          </p>
+        )}
       </div>
 
       <button
@@ -153,7 +179,13 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       >
         <span className="flex items-center gap-2">
           {saving && <Spinner />}
-          {saving ? "Recording…" : "Record payment"}
+          {saving
+            ? isCash
+              ? "Recording…"
+              : "Opening…"
+            : isCash
+              ? "Record payment"
+              : "Send payment link"}
         </span>
       </button>
 
