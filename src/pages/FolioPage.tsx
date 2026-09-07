@@ -399,10 +399,12 @@ export const FolioPage: React.FC = () => {
 
           <div className="bg-[#ec3013] p-4 text-[#f3f2f2]">
             <div className="text-[10px] font-semibold tracking-[.14em] uppercase opacity-85">
-              Balance due
+              {totals.refundDue !== "0.00" ? "Refund due" : "Balance due"}
             </div>
             <div className="font-heading mt-2 text-[38px] leading-[.92] font-extrabold tracking-tight tabular-nums">
-              {formatPesoExact(totals.balance)}
+              {totals.refundDue !== "0.00"
+                ? formatPesoExact(totals.refundDue)
+                : formatPesoExact(totals.balance)}
             </div>
           </div>
 

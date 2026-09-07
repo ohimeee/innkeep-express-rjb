@@ -156,6 +156,9 @@ export interface FolioTotals {
   balance: string;
   // True when nothing is owed, which is what unlocks check-out.
   settled: boolean;
+  // Money the hotel holds for a stay that will not happen. Zero on a normal
+  // folio; the amount paid on a cancelled one.
+  refundDue: string;
 }
 
 export interface Folio {

@@ -196,8 +196,8 @@ export const ConfirmationPage: React.FC = () => {
               <p className="text-xl font-bold">Cancel this booking</p>
               <p className="my-2 max-w-lg text-xs text-gray-500">
                 Confirm the name the booking is under. The room is released
-                straight away. Anything already paid is refunded by the front
-                desk — quote the code below.
+                straight away. Anything already paid is refunded to the original
+                payment method.
               </p>
               <form onSubmit={cancel} className="mt-2 flex w-full max-w-md">
                 <input
