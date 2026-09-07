@@ -1,8 +1,6 @@
 import { useState } from "react";
 
 import { recordPayment, settleBalance } from "../api/folioService";
-import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "../types";
-import type { PaymentMethod } from "../types";
 import { Spinner } from "./Spinner";
 
 const FIELD_CLASSES =
@@ -33,13 +31,17 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState("");
-  // Cash is the only method the desk can simply assert — the money is in the
-  // drawer and somebody watched it arrive. Every other method has to move
-  // through the gateway, so the folio can prove it rather than take a word
-  // for it.
-  const [method, setMethod] = useState<PaymentMethod>("CASH");
+  // Two settlement routes, not six payment methods.
+  //
+  // Cash is the only one the desk can assert on its own — the money is in the
+  // drawer and somebody watched it arrive. Everything else moves through the
+  // gateway, and *which* channel it turns out to be is the guest's decision,
+  // made on their own phone a moment later. Asking the front desk to predict
+  // it changed nothing: the invoice offers every channel regardless, and the
+  // webhook records whichever one was actually used.
+  const [route, setRoute] = useState<"CASH" | "ONLINE">("CASH");
 
-  const isCash = method === "CASH";
+  const isCash = route === "CASH";
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -54,7 +56,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       if (isCash) {
         await recordPayment(reservationId, {
           amount: String(data.get("amount") ?? ""),
-          method,
+          method: "CASH",
         });
         form.reset();
         setSaved("Payment recorded");
@@ -149,20 +151,20 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         <select
           id="payment-method"
           name="method"
-          value={method}
-          onChange={(event) => setMethod(event.target.value as PaymentMethod)}
+          value={route}
+          onChange={(event) =>
+            setRoute(event.target.value as "CASH" | "ONLINE")
+          }
           className={`${FIELD_CLASSES} appearance-none`}
         >
-          {PAYMENT_METHODS.map((method) => (
-            <option key={method} value={method}>
-              {PAYMENT_METHOD_LABELS[method]}
-            </option>
-          ))}
+          <option value="CASH">Cash at the desk</option>
+          <option value="ONLINE">Pay online — card, e-wallet or bank</option>
         </select>
         {isCash ? null : (
           <p className="text-[11px] leading-snug text-[#201e1d]/55">
-            The guest pays the full balance on their phone. The folio updates
-            when Xendit confirms — it does not clear on this click.
+            The guest picks the channel on the payment page and pays the full
+            balance. The folio updates when Xendit confirms — it does not clear
+            on this click.
           </p>
         )}
       </div>
