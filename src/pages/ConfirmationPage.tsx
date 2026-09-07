@@ -290,37 +290,6 @@ export const ConfirmationPage: React.FC = () => {
                   {formatPeso(reservation.totalAmount)}
                 </span>
               </div>
-              {cancellable ? (
-            <div className="mt-5 flex-col border-t-2 pt-5">
-              <p className="text-xl font-bold">Cancel this booking</p>
-              <p className="my-2 max-w-lg text-xs text-gray-500">
-                Confirm the name the booking is under. The room is released
-                straight away. Anything already paid is refunded by the front
-                desk — quote the code below.
-              </p>
-              <form onSubmit={cancel} className="mt-2 flex w-full max-w-md">
-                <input
-                  name="guestName"
-                  required
-                  placeholder="Full name on the reservation"
-                  className="flex-1 border-2 border-gray-400 bg-gray-200 p-3 text-sm"
-                />
-                <button
-                  type="submit"
-                  disabled={cancelling}
-                  className="bg-gray-700 px-5 text-sm font-bold tracking-wider text-white disabled:bg-gray-400"
-                >
-                  {cancelling ? "Cancelling..." : "Cancel"}
-                </button>
-              </form>
-              {cancelError ? (
-                <p role="alert" className="mt-2 text-sm text-orange-700">
-                  {cancelError}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-
           {charges.length > 0 ? (
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-sm">Extras</span>
