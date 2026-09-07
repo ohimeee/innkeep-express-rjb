@@ -24,8 +24,24 @@ router.get('/', async (req: Request, res: Response) => {
 
   try {
     const result = await pool.query(
+      // availableTonight answers the catalog's question when the guest has not
+      // picked dates yet: the page shows every room so the property is on
+      // display, and this says which of them can actually be booked right now.
+      // Without it a card offers "Book Now" on a room that will be refused.
+      //
+      // Room.status is not that answer. It is housekeeping's "is somebody in
+      // there this minute", which says nothing about tonight — a room reading
+      // OCCUPIED whose guest leaves today is free tonight.
       `SELECT "id", "number", "name", "type", "capacity", "amenities",
-              "description", "imageUrl", "status", "nightlyRate"
+              "description", "imageUrl", "status", "nightlyRate",
+              NOT EXISTS (
+                SELECT 1
+                  FROM "Reservation" res
+                 WHERE res."roomId" = r."id"
+                   AND res."status" IN ('PENDING', 'CONFIRMED', 'CHECKED_IN')
+                   AND res."checkIn"  < CURRENT_DATE + 1
+                   AND res."checkOut" > CURRENT_DATE
+              ) AS "availableTonight"
          FROM "Room" r
         WHERE r."capacity" >= $1
           AND (
