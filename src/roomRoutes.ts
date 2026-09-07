@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { pool } from './db';
+import { validateResource } from './validate';
+import { createRoomSchema, updateRoomSchema } from './schemas';
 
 const router = Router();
 
@@ -60,6 +62,54 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
     res.json(result.rows[0]);
   } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// POST
+router.post("/", validateResource(createRoomSchema), async (req: Request, res: Response) => {
+  const { number, name, type, capacity, nightlyRate, status, amenities, description, imageUrl } = req.body;
+  try {
+    const result = await pool.query(
+      `INSERT INTO "Room" ("number", "name", "type", "capacity", "nightlyRate",
+                           "status", "amenities", "description", "imageUrl")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING *`,
+      [number, name, type, capacity, nightlyRate, status, amenities, description, imageUrl]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    // The form warns about a clash as it is typed, but that read is stale the
+    // moment it returns. The unique index on "number" is the real guard.
+    if ((error as { code?: string }).code === '23505') {
+      return res.status(409).json({ error: 'That room number is already in use.' });
+    }
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// PUT
+router.put("/:id", validateResource(updateRoomSchema), async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { number, name, type, capacity, nightlyRate, status, amenities, description, imageUrl } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE "Room"
+          SET "number" = $2, "name" = $3, "type" = $4, "capacity" = $5,
+              "nightlyRate" = $6, "status" = $7, "amenities" = $8,
+              "description" = $9, "imageUrl" = $10
+        WHERE "id" = $1
+       RETURNING *`,
+      [id, number, name, type, capacity, nightlyRate, status, amenities, description, imageUrl]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    if ((error as { code?: string }).code === '23505') {
+      return res.status(409).json({ error: 'That room number is already in use.' });
+    }
     res.status(500).json({ error: (error as Error).message });
   }
 });
