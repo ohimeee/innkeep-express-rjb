@@ -325,13 +325,19 @@ export const FolioPage: React.FC = () => {
                 </div>
                 <p className="mt-1.5 max-w-[48ch] text-[12.5px] leading-relaxed text-[#201e1d]/60">
                   This stay has no incidental charges. The balance to the right
-                  is room and VAT only — post minibar, laundry or transport
-                  below as they happen.
+                  is room and VAT only
+                  {folio.status === "CHECKED_IN"
+                    ? " — post minibar, laundry or transport below as they happen."
+                    : "."}
                 </p>
               </div>
             )}
 
-            <ChargeForm reservationId={folio.id} onPosted={loadFolio} />
+            {/* Only an in-house guest can run up a tab. Check-out will not run
+                while anything is owed, so a closed folio stays closed. */}
+            {folio.status === "CHECKED_IN" ? (
+              <ChargeForm reservationId={folio.id} onPosted={loadFolio} />
+            ) : null}
           </section>
         </div>
 
