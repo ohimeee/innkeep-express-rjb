@@ -18,9 +18,13 @@ const router = Router();
 // Room.status is deliberately not consulted. That is housekeeping's "is
 // someone in there right now", not a statement about future availability.
 router.get('/', async (req: Request, res: Response) => {
-  const { checkIn, checkOut, guests } = req.query;
+  const { checkIn, checkOut, guests, all } = req.query;
   const capacity = Number(guests) || 1;
   const hasRange = Boolean(checkIn && checkOut);
+  // The admin inventory asks for everything, because a room taken off the
+  // market still has to be editable — otherwise nobody could put it back.
+  // The guest catalog never does.
+  const includeOutOfService = all === 'true';
 
   try {
     const result = await pool.query(
@@ -61,10 +65,10 @@ router.get('/', async (req: Request, res: Response) => {
               ) AS "bookedUntil"
          FROM "Room" r
         WHERE r."capacity" >= $1
-          -- Out of service rooms stay in the catalog so staff can still see and
-          -- edit them, but they are never offered: availableTonight is forced
-          -- false below, and a dated search drops them entirely.
-          AND ($2::date IS NULL OR NOT r."outOfService")
+          -- A room out of service is off the market entirely: not bookable, and
+          -- not worth showing a guest either. Only the admin inventory asks to
+          -- see them, via ?all=true.
+          AND ($4::boolean OR NOT r."outOfService")
           AND (
             $2::date IS NULL
             OR NOT EXISTS (
@@ -76,7 +80,7 @@ router.get('/', async (req: Request, res: Response) => {
             )
           )
         ORDER BY r."type" ASC, r."number" ASC`,
-      [capacity, hasRange ? checkIn : null, hasRange ? checkOut : null]
+      [capacity, hasRange ? checkIn : null, hasRange ? checkOut : null, includeOutOfService]
     );
     res.json(result.rows);
   } catch (error) {
