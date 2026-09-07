@@ -162,7 +162,7 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({ rows }) =>
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search guest, room or IKX code"
+          placeholder="Search guest, room number or IKX code"
           className="min-w-[220px] flex-1 border border-[#201e1d]/40 bg-[#f3f2f2] px-3 py-2.5 text-[13px] text-[#201e1d]"
         />
       </div>
