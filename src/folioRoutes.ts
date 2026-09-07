@@ -118,9 +118,12 @@ router.get("/:code", async (req: Request, res: Response) => {
 
 // POST — post an incidental against a stay.
 //
-// Only an in-house guest can run up a minibar tab. A departed guest is
-// deliberately still chargeable, because a late-posted transfer or a correction
-// is a real thing the desk has to do.
+// Only an in-house guest can run up a minibar tab, so CHECKED_IN is the only
+// status that takes one. Check-out refuses to run while anything is owed, which
+// makes a checked-out folio final by definition — allowing a charge after it
+// would reopen a balance on a guest who has already gone, with nobody at the
+// desk to pay it and no way to reach them. Real hotels do post late charges,
+// but they have a card on file to bill and this does not.
 router.post("/:id/charges", validateResource(createChargeSchema), async (req: Request, res: Response) => {
   const { id } = req.params;
   const { description, department, amount, postedBy } = req.body;
@@ -132,9 +135,12 @@ router.post("/:id/charges", validateResource(createChargeSchema), async (req: Re
       return res.status(404).json({ error: 'That reservation no longer exists.' });
     }
     const status = reservation.rows[0].status;
-    if (status !== 'CHECKED_IN' && status !== 'CHECKED_OUT') {
+    if (status !== 'CHECKED_IN') {
       return res.status(409).json({
-        error: 'Charges can only be posted once a guest has checked in. This booking has not started.',
+        error:
+          status === 'CHECKED_OUT'
+            ? 'This guest has checked out and the folio is closed. Take a late charge as a new walk-in sale.'
+            : 'Charges can only be posted while a guest is checked in. This booking has not started.',
       });
     }
 
