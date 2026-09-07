@@ -355,10 +355,7 @@ export const FolioPage: React.FC = () => {
                         key={payment.id}
                         className="text-[11px] text-[#201e1d]/55 tabular-nums"
                       >
-                        {PAYMENT_METHOD_LABELS[payment.method]}
-                        {payment.cardLast4
-                          ? ` · ****${payment.cardLast4}`
-                          : ""}{" "}
+                        {PAYMENT_METHOD_LABELS[payment.method]}{" "}
                         · {formatStamp(new Date(payment.paidAt))}
                       </div>
                     ))}

@@ -36,8 +36,6 @@ export const postCharge = async (
 export interface NewPayment {
   amount: string;
   method: PaymentMethod;
-  // Last four digits only. The full number never reaches this app.
-  cardLast4: string | null;
 }
 
 export const recordPayment = async (

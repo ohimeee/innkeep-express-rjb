@@ -24,10 +24,6 @@ interface PaymentFormProps {
 // panel it sits in is already the busiest part of the screen. It opens
 // pre-filled with the outstanding balance, which is what is being collected
 // almost every time — the field stays editable for a part payment.
-//
-// Card details are four digits and nothing else. The full number is entered on
-// Xendit's page and never reaches this app; a form here that accepted one
-// would change that, which is the whole reason checkout is hosted.
 export const PaymentForm: React.FC<PaymentFormProps> = ({
   reservationId,
   balance,
@@ -47,13 +43,10 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
     setError("");
     setSaved("");
 
-    const cardLast4 = String(data.get("cardLast4") ?? "").trim();
-
     try {
       await recordPayment(reservationId, {
         amount: String(data.get("amount") ?? ""),
         method: String(data.get("method") ?? "CASH") as PaymentMethod,
-        cardLast4: cardLast4 === "" ? null : cardLast4,
       });
       form.reset();
       setSaved("Payment recorded");
@@ -146,20 +139,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
             </option>
           ))}
         </select>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <label htmlFor="payment-last4" className={LABEL_CLASSES}>
-          Card last 4 (optional)
-        </label>
-        <input
-          id="payment-last4"
-          name="cardLast4"
-          inputMode="numeric"
-          maxLength={4}
-          placeholder="4417"
-          className={`${FIELD_CLASSES} tabular-nums`}
-        />
       </div>
 
       <button

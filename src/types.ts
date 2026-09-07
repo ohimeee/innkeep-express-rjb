@@ -131,7 +131,6 @@ export interface FolioPayment {
   paidAt: string;
   amount: string;
   method: PaymentMethod;
-  cardLast4: string | null;
 }
 
 // roomTotal is the stay ex-VAT and tax is what was frozen at booking. Neither
