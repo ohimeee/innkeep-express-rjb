@@ -36,21 +36,24 @@ export const WalkInForm: React.FC<WalkInFormProps> = ({ onTaken }) => {
   const [checkIn, setCheckIn] = useState(today());
   const [checkOut, setCheckOut] = useState(addDays(today(), 1));
   const [checkInNow, setCheckInNow] = useState(true);
+  const [guestCount, setGuestCount] = useState(MIN_GUESTS);
 
-  // Only rooms free for the chosen dates. The API does the filtering, so a
-  // room somebody else took a moment ago stops appearing here too.
+  // Only rooms free for these dates that sleep this many. The API does the
+  // filtering, so a room somebody else took a moment ago stops appearing here
+  // too — and a room too small for the party never appears at all, rather than
+  // being offered and then refused on submit.
   useEffect(() => {
     if (!open) return;
 
     const loadRooms = async () => {
       try {
-        setRooms(await fetchRooms({ checkIn, checkOut, guests: MIN_GUESTS }));
+        setRooms(await fetchRooms({ checkIn, checkOut, guests: guestCount }));
       } catch {
         setRooms([]);
       }
     };
     loadRooms();
-  }, [open, checkIn, checkOut]);
+  }, [open, checkIn, checkOut, guestCount]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -63,7 +66,7 @@ export const WalkInForm: React.FC<WalkInFormProps> = ({ onTaken }) => {
       const reservation = await createWalkIn({
         roomId: String(data.get("roomId") ?? ""),
         guestName: String(data.get("guestName") ?? ""),
-        guestCount: Number(data.get("guestCount") ?? 1),
+        guestCount,
         checkIn,
         checkOut,
         checkInNow,
@@ -174,11 +177,13 @@ export const WalkInForm: React.FC<WalkInFormProps> = ({ onTaken }) => {
           </label>
           <input
             id="walkin-guests"
-            name="guestCount"
             type="number"
             min={MIN_GUESTS}
             max={MAX_GUESTS}
-            defaultValue={1}
+            value={guestCount}
+            onChange={(event) =>
+              setGuestCount(Number(event.target.value) || MIN_GUESTS)
+            }
             className={`${FIELD_CLASSES} tabular-nums`}
           />
         </div>
@@ -220,7 +225,8 @@ export const WalkInForm: React.FC<WalkInFormProps> = ({ onTaken }) => {
           </select>
           {rooms.length === 0 ? (
             <p className="text-[11px] text-[#b8250e]">
-              Nothing is free for those dates.
+              No room sleeping {guestCount} is free for those dates. A larger
+              party needs a second booking on another room.
             </p>
           ) : null}
         </div>
