@@ -133,3 +133,10 @@ export const cancelByCode = (code: string, guestName: string) =>
     'Failed to cancel',
     { guestName }
   );
+
+// Move a guest to a different room.
+//
+// The bill follows the room, so a folio always says what the room it names
+// costs.
+export const moveReservation = (id: string, roomId: string) =>
+  act(`/reservations/${id}/move`, 'Failed to move the guest', { roomId });

@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { fetchFolio } from "../api/folioService";
 import { ChargeForm } from "../components/ChargeForm";
 import { FrontDeskButton } from "../components/FrontDeskButton";
+import { MoveForm } from "../components/MoveForm";
 import { PaymentForm } from "../components/PaymentForm";
 import { formatLongDate, formatStamp } from "../dates";
 import { formatPesoExact } from "../money";
@@ -457,6 +458,19 @@ export const FolioPage: React.FC = () => {
                   </div>
                 ) : null}
               </>
+            )}
+
+            {/* A live stay can be moved: the room broke, or the guest asked.
+                Once they have gone there is nothing to move. */}
+            {folio.status === "CHECKED_OUT" ? null : (
+              <MoveForm
+                reservationId={folio.id}
+                checkIn={folio.checkIn}
+                checkOut={folio.checkOut}
+                guestCount={folio.guestCount}
+                totalAmount={folio.totals.roomTotal}
+                onMoved={loadFolio}
+              />
             )}
 
             {/* Check-out is refused while anything is owed, so this is the only
