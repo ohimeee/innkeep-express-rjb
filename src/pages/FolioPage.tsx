@@ -21,6 +21,7 @@ const STATUS_LABEL: Record<ReservationStatus, string> = {
   CHECKED_IN: "CHECKED IN",
   CHECKED_OUT: "CHECKED OUT",
   CANCELLED: "CANCELLED",
+  NO_SHOW: "NO SHOW",
 };
 
 const STATUS_CLASSES: Record<ReservationStatus, string> = {
@@ -29,6 +30,7 @@ const STATUS_CLASSES: Record<ReservationStatus, string> = {
   CHECKED_IN: "bg-[#e15b47] text-[#f3f2f2]",
   CHECKED_OUT: "bg-[#eae9e9] text-[#201e1d]/70",
   CANCELLED: "border border-[#201e1d]/40 text-[#201e1d]/45",
+  NO_SHOW: "border border-[#201e1d]/40 bg-[#201e1d]/10 text-[#201e1d]/60",
 };
 
 const BackLink: React.FC = () => (

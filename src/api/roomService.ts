@@ -27,6 +27,7 @@ export interface RoomInput {
   amenities: string[];
   description: string | null;
   imageUrl: string | null;
+  outOfService: boolean;
 }
 
 export const createRoom = async (input: RoomInput): Promise<Room> => {

@@ -42,7 +42,10 @@ export const ReservationsPage: React.FC = () => {
         </p>
       ) : (
         <>
-          <ReservationsTable rows={state.reservations} />
+          <ReservationsTable
+            rows={state.reservations}
+            onChanged={loadReservations}
+          />
           <WalkInForm onTaken={loadReservations} />
         </>
       )}

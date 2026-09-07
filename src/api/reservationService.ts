@@ -103,3 +103,33 @@ export const createWalkIn = async (walkIn: WalkIn): Promise<Reservation> => {
   }
   return response.json();
 };
+
+const act = async (path: string, fallback: string, body?: unknown) => {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}));
+    throw new Error(detail.error ?? fallback);
+  }
+  return response.json();
+};
+
+// Cancel a booking that has not started. Frees the room immediately.
+export const cancelReservation = (id: string) =>
+  act(`/reservations/${id}/cancel`, 'Failed to cancel');
+
+// Paid, never arrived. Keeps the money, frees the room.
+export const markNoShow = (id: string) =>
+  act(`/reservations/${id}/no-show`, 'Failed to mark a no-show');
+
+// A guest cancelling their own booking. The name is a second factor — the
+// four-digit code alone is small enough to guess.
+export const cancelByCode = (code: string, guestName: string) =>
+  act(
+    `/reservations/code/${encodeURIComponent(code)}/cancel`,
+    'Failed to cancel',
+    { guestName }
+  );

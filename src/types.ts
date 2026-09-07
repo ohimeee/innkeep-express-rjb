@@ -17,6 +17,8 @@ export const RESERVATION_STATUSES = [
   "CHECKED_IN",
   "CHECKED_OUT",
   "CANCELLED",
+  // Paid, never arrived, never checked in. Money the hotel keeps.
+  "NO_SHOW",
 ] as const;
 export type ReservationStatus = (typeof RESERVATION_STATUSES)[number];
 
@@ -79,6 +81,8 @@ export interface Room {
   // Whether it can be booked for tonight. The catalog shows every room so the
   // property is on display, and this decides which of them offer Book Now.
   availableTonight: boolean;
+  // Taken off the market for maintenance. Never offered for booking.
+  outOfService: boolean;
   // When the stay covering tonight ends, or null when nothing does. Says when
   // the room frees from *that* booking — not a promise it is free after, since
   // the next guest may already have it.

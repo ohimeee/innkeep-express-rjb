@@ -24,6 +24,7 @@ interface Draft {
   amenityDraft: string;
   description: string;
   imageUrl: string;
+  outOfService: boolean;
 }
 
 const emptyDraft = (): Draft => ({
@@ -38,6 +39,7 @@ const emptyDraft = (): Draft => ({
   amenityDraft: "",
   description: "",
   imageUrl: "",
+  outOfService: false,
 });
 
 const draftFrom = (room: Room): Draft => ({
@@ -52,6 +54,7 @@ const draftFrom = (room: Room): Draft => ({
   amenityDraft: "",
   description: room.description ?? "",
   imageUrl: room.imageUrl ?? "",
+  outOfService: room.outOfService,
 });
 
 const FIELD_CLASSES =
@@ -124,6 +127,7 @@ export const RoomsInventory: React.FC<RoomsInventoryProps> = ({
       amenities: draft.amenities,
       description: draft.description.trim() === "" ? null : draft.description.trim(),
       imageUrl: draft.imageUrl.trim() === "" ? null : draft.imageUrl.trim(),
+      outOfService: draft.outOfService,
     };
 
     try {
@@ -216,10 +220,12 @@ export const RoomsInventory: React.FC<RoomsInventoryProps> = ({
                         <td className="px-4 py-3">
                           <span
                             className={`inline-flex items-center px-2 py-1 text-[9px] font-extrabold tracking-widest ${
-                              STATUS_CLASSES[room.status]
+                              room.outOfService
+                                ? "bg-[#201e1d]/70 text-[#f3f2f2]"
+                                : STATUS_CLASSES[room.status]
                             }`}
                           >
-                            {room.status}
+                            {room.outOfService ? "OUT OF SERVICE" : room.status}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -576,6 +582,19 @@ export const RoomsInventory: React.FC<RoomsInventoryProps> = ({
                   ))}
                 </div>
               </div>
+
+              <label className="flex items-center gap-2 text-[12.5px] text-[#201e1d]/75">
+                <input
+                  type="checkbox"
+                  checked={draft.outOfService}
+                  onChange={(event) => set("outOfService", event.target.checked)}
+                />
+                Out of service
+              </label>
+              <p className="-mt-2 text-[11px] leading-snug text-[#201e1d]/55">
+                Stops new bookings — maintenance, repairs. Guests already booked
+                in are not affected.
+              </p>
 
               <button
                 type="submit"

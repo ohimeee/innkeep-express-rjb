@@ -1,7 +1,8 @@
-import { useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
-import { fetchReservationByCode } from "../api/reservationService";
+import { cancelByCode, fetchReservationByCode } from "../api/reservationService";
+import { Eye, EyeOff } from "lucide-react";
 import { StayDetails } from "../components/StayDetails";
 import { nights } from "../dates";
 import { formatPeso } from "../money";
@@ -49,22 +50,28 @@ export const ConfirmationPage: React.FC = () => {
   const { confirmationCode } = useParams<{ confirmationCode: string }>();
   const [searchParams] = useSearchParams();
   const [state, dispatch] = useReducer(reservationReducer, initialState);
+  // The code is hidden until asked for. It is the only key to this booking, so
+  // it should not sit readable in a screenshot or over a shoulder.
+  const [revealed, setRevealed] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+
+  const loadReservation = useCallback(async () => {
+    if (!confirmationCode) return;
+
+    dispatch({ type: "FETCH_START" });
+
+    try {
+      const data = await fetchReservationByCode(confirmationCode);
+      dispatch({ type: "FETCH_SUCCESS", payload: data });
+    } catch (error) {
+      dispatch({ type: "FETCH_ERROR", payload: (error as Error).message });
+    }
+  }, [confirmationCode]);
 
   useEffect(() => {
-    const loadReservation = async () => {
-      if (!confirmationCode) return;
-
-      dispatch({ type: "FETCH_START" });
-
-      try {
-        const data = await fetchReservationByCode(confirmationCode);
-        dispatch({ type: "FETCH_SUCCESS", payload: data });
-      } catch (error) {
-        dispatch({ type: "FETCH_ERROR", payload: (error as Error).message });
-      }
-    };
     loadReservation();
-  }, [confirmationCode]);
+  }, [loadReservation]);
 
   if (state.loading)
     return <p className="py-10 text-gray-500">Loading booking...</p>;
@@ -82,6 +89,28 @@ export const ConfirmationPage: React.FC = () => {
   const settled = totals.settled;
   const stayNights = nights(reservation.checkIn, reservation.checkOut);
   const quote = quoteStay(reservation.nightlyRate, stayNights);
+
+  const cancellable =
+    reservation.status === "PENDING" || reservation.status === "CONFIRMED";
+
+  const cancel = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const name = String(
+      new FormData(event.currentTarget).get("guestName") ?? ""
+    );
+
+    setCancelling(true);
+    setCancelError("");
+
+    try {
+      await cancelByCode(reservation.confirmationCode, name);
+      loadReservation();
+    } catch (caught) {
+      setCancelError((caught as Error).message);
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const banner = failed
     ? {
@@ -162,6 +191,37 @@ export const ConfirmationPage: React.FC = () => {
             </div>
           </div>
 
+          {cancellable ? (
+            <div className="mt-5 flex-col border-t-2 pt-5">
+              <p className="text-xl font-bold">Cancel this booking</p>
+              <p className="my-2 max-w-lg text-xs text-gray-500">
+                Confirm the name the booking is under. The room is released
+                straight away. Anything already paid is refunded by the front
+                desk — quote the code below.
+              </p>
+              <form onSubmit={cancel} className="mt-2 flex w-full max-w-md">
+                <input
+                  name="guestName"
+                  required
+                  placeholder="Full name on the reservation"
+                  className="flex-1 border-2 border-gray-400 bg-gray-200 p-3 text-sm"
+                />
+                <button
+                  type="submit"
+                  disabled={cancelling}
+                  className="bg-gray-700 px-5 text-sm font-bold tracking-wider text-white disabled:bg-gray-400"
+                >
+                  {cancelling ? "Cancelling..." : "Cancel"}
+                </button>
+              </form>
+              {cancelError ? (
+                <p role="alert" className="mt-2 text-sm text-orange-700">
+                  {cancelError}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           {charges.length > 0 ? (
             <div className="mt-5 flex-col">
               <p className="text-xl font-bold">Extras on your room</p>
@@ -190,9 +250,25 @@ export const ConfirmationPage: React.FC = () => {
               <p className="text-xs font-semibold tracking-widest text-orange-500">
                 CONFIRMATION CODE
               </p>
-              <p className="text-3xl font-bold tracking-tight">
-                {reservation.confirmationCode}
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="text-3xl font-bold tracking-tight">
+                  {revealed
+                    ? reservation.confirmationCode
+                    : `${reservation.confirmationCode.slice(0, 4)}••••`}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setRevealed((shown) => !shown)}
+                  aria-label={revealed ? "Hide the code" : "Show the code"}
+                  className="text-gray-500 hover:text-orange-500"
+                >
+                  {revealed ? (
+                    <EyeOff className="size-5" />
+                  ) : (
+                    <Eye className="size-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-col py-5">
@@ -214,7 +290,38 @@ export const ConfirmationPage: React.FC = () => {
                   {formatPeso(reservation.totalAmount)}
                 </span>
               </div>
-              {charges.length > 0 ? (
+              {cancellable ? (
+            <div className="mt-5 flex-col border-t-2 pt-5">
+              <p className="text-xl font-bold">Cancel this booking</p>
+              <p className="my-2 max-w-lg text-xs text-gray-500">
+                Confirm the name the booking is under. The room is released
+                straight away. Anything already paid is refunded by the front
+                desk — quote the code below.
+              </p>
+              <form onSubmit={cancel} className="mt-2 flex w-full max-w-md">
+                <input
+                  name="guestName"
+                  required
+                  placeholder="Full name on the reservation"
+                  className="flex-1 border-2 border-gray-400 bg-gray-200 p-3 text-sm"
+                />
+                <button
+                  type="submit"
+                  disabled={cancelling}
+                  className="bg-gray-700 px-5 text-sm font-bold tracking-wider text-white disabled:bg-gray-400"
+                >
+                  {cancelling ? "Cancelling..." : "Cancel"}
+                </button>
+              </form>
+              {cancelError ? (
+                <p role="alert" className="mt-2 text-sm text-orange-700">
+                  {cancelError}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {charges.length > 0 ? (
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-sm">Extras</span>
                   <span className="text-sm font-bold">

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useMemo, useState } from "react";
 
 import { HoldTimer } from "./HoldTimer";
+import { LifecycleButton } from "./LifecycleButton";
 import { folioHref } from "../search";
 import { formatStayDate } from "../dates";
 import { formatPeso } from "../money";
@@ -22,6 +23,7 @@ const TAG_CLASSES: Record<ReservationStatus, string> = {
   CHECKED_IN: "bg-[#e15b47] text-[#f3f2f2]",
   CHECKED_OUT: "bg-[#eae9e9] text-[#201e1d]/70",
   CANCELLED: "border border-[#201e1d]/40 text-[#201e1d]/45 line-through",
+  NO_SHOW: "border border-[#201e1d]/40 bg-[#201e1d]/10 text-[#201e1d]/60",
 };
 
 const STATUS_LABEL: Record<ReservationStatus, string> = {
@@ -30,6 +32,7 @@ const STATUS_LABEL: Record<ReservationStatus, string> = {
   CHECKED_IN: "CHECKED IN",
   CHECKED_OUT: "CHECKED OUT",
   CANCELLED: "CANCELLED",
+  NO_SHOW: "NO SHOW",
 };
 
 /** "28 Aug → 31 Aug", the range the table prints in one cell. */
@@ -70,6 +73,8 @@ const StatusTag: React.FC<{ stay: Reservation }> = ({ stay }) => (
 
 interface ReservationsTableProps {
   rows: Reservation[];
+  // The page refetches after a booking is cancelled or marked a no-show.
+  onChanged: () => void;
 }
 
 /**
@@ -81,7 +86,7 @@ interface ReservationsTableProps {
  * one that does not. The rows arrive as a prop from
  * ReservationsPage, which is what talks to the API.
  */
-export const ReservationsTable: React.FC<ReservationsTableProps> = ({ rows }) => {
+export const ReservationsTable: React.FC<ReservationsTableProps> = ({ rows, onChanged }) => {
   const [filter, setFilter] = useState<Filter>("ALL");
   const [search, setSearch] = useState("");
 
@@ -252,12 +257,30 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({ rows }) =>
                     <StatusTag stay={stay} />
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link
-                      to={folioHref(stay.confirmationCode)}
-                      className="text-xs font-semibold text-[#ec3013] hover:text-[#b8250e]"
-                    >
-                      {stay.status === "PENDING" ? "View hold" : "Folio"}
-                    </Link>
+                    <div className="flex items-center justify-end gap-3">
+                      {stay.status === "PENDING" || stay.status === "CONFIRMED" ? (
+                        <LifecycleButton
+                          reservationId={stay.id}
+                          action="CANCEL"
+                          onDone={onChanged}
+                        />
+                      ) : null}
+                      {/* Only a confirmed guest can fail to arrive. The API
+                          also refuses until the arrival date has passed. */}
+                      {stay.status === "CONFIRMED" ? (
+                        <LifecycleButton
+                          reservationId={stay.id}
+                          action="NO_SHOW"
+                          onDone={onChanged}
+                        />
+                      ) : null}
+                      <Link
+                        to={folioHref(stay.confirmationCode)}
+                        className="text-xs font-semibold text-[#ec3013] hover:text-[#b8250e]"
+                      >
+                        {stay.status === "PENDING" ? "View hold" : "Folio"}
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
