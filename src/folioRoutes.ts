@@ -12,6 +12,59 @@ const router = Router();
 const sumCentavos = (amounts: string[]) =>
   amounts.reduce((total, amount) => total + toCentavos(amount), 0);
 
+// The ledger for one stay: its charges, its payments, and what they add up to.
+//
+// Shared by the staff folio and the guest's confirmation page so the two can
+// never disagree about a balance. Two reads rather than one join, because
+// joining a reservation to both tables multiplies the rows together and each
+// sum would then count the other table's rows.
+//
+// roomTotal is derived rather than stored: totalAmount was written with VAT
+// already in it at booking, so the ex-VAT line is totalAmount - taxAmount.
+// Recomputing from the room's current rate would be wrong — a rate changed
+// after the booking would retroactively alter a bill already paid.
+//
+// Incidentals carry no VAT of their own: they are posted VAT-inclusive, which
+// is how PH hotels bill minibar and laundry, and it keeps taxAmount frozen at
+// the moment of booking.
+export const readLedger = async (
+  reservationId: string,
+  totalAmount: string,
+  taxAmount: string
+) => {
+  const charges = await pool.query(
+    `SELECT "id", "createdAt", "description", "department", "postedBy", "amount"
+       FROM "Charge" WHERE "reservationId" = $1 ORDER BY "createdAt" ASC`,
+    [reservationId]
+  );
+
+  const payments = await pool.query(
+    `SELECT "id", "paidAt", "amount", "method"
+       FROM "Payment" WHERE "reservationId" = $1 ORDER BY "paidAt" ASC`,
+    [reservationId]
+  );
+
+  const taxCentavos = toCentavos(taxAmount);
+  const roomCentavos = toCentavos(totalAmount) - taxCentavos;
+  const incidentalCentavos = sumCentavos(charges.rows.map((c) => c.amount));
+  const paidCentavos = sumCentavos(payments.rows.map((p) => p.amount));
+  const balanceCentavos =
+    roomCentavos + taxCentavos + incidentalCentavos - paidCentavos;
+
+  return {
+    charges: charges.rows,
+    payments: payments.rows,
+    totals: {
+      roomTotal: fromCentavos(roomCentavos),
+      tax: fromCentavos(taxCentavos),
+      incidentals: fromCentavos(incidentalCentavos),
+      paid: fromCentavos(paidCentavos),
+      balance: fromCentavos(balanceCentavos),
+      settled: balanceCentavos <= 0,
+    },
+  };
+};
+
 // GET — the whole bill for one confirmation code, in three reads.
 //
 // Three round trips rather than one join, deliberately: joining a reservation
@@ -39,46 +92,12 @@ router.get("/:code", async (req: Request, res: Response) => {
 
     const row = found.rows[0];
 
-    const charges = await pool.query(
-      `SELECT "id", "createdAt", "description", "department", "postedBy", "amount"
-         FROM "Charge" WHERE "reservationId" = $1 ORDER BY "createdAt" ASC`,
-      [row.id]
-    );
-
-    const payments = await pool.query(
-      `SELECT "id", "paidAt", "amount", "method"
-         FROM "Payment" WHERE "reservationId" = $1 ORDER BY "paidAt" ASC`,
-      [row.id]
-    );
-
-    // roomTotal is derived rather than stored: totalAmount was written with VAT
-    // already in it at booking, so the ex-VAT line is totalAmount - taxAmount.
-    // Recomputing from the room's current rate would be wrong — a rate changed
-    // after the booking would retroactively alter a bill already paid.
-    //
-    // Incidentals carry no VAT of their own: they are posted VAT-inclusive,
-    // which is how PH hotels bill minibar and laundry, and it keeps taxAmount
-    // frozen at the moment of booking.
-    const taxCentavos = toCentavos(row.taxAmount);
-    const roomCentavos = toCentavos(row.totalAmount) - taxCentavos;
-    const incidentalCentavos = sumCentavos(charges.rows.map((c) => c.amount));
-    const paidCentavos = sumCentavos(payments.rows.map((p) => p.amount));
-    const balanceCentavos =
-      roomCentavos + taxCentavos + incidentalCentavos - paidCentavos;
+    const ledger = await readLedger(row.id, row.totalAmount, row.taxAmount);
 
     res.json({
       ...row,
       nights: nights(row.checkIn, row.checkOut),
-      charges: charges.rows,
-      payments: payments.rows,
-      totals: {
-        roomTotal: fromCentavos(roomCentavos),
-        tax: fromCentavos(taxCentavos),
-        incidentals: fromCentavos(incidentalCentavos),
-        paid: fromCentavos(paidCentavos),
-        balance: fromCentavos(balanceCentavos),
-        settled: balanceCentavos <= 0,
-      },
+      ...ledger,
     });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });

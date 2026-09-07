@@ -6,6 +6,7 @@ import { nights } from './dates';
 import { toCentavos, toMoney } from './money';
 import { quoteStay } from './pricing';
 import { createInvoice } from './payments';
+import { readLedger } from './folioRoutes';
 
 const router = Router();
 
@@ -88,8 +89,12 @@ router.get("/", async (_req: Request, res: Response) => {
   }
 });
 
-// GET — look a booking up by the code on the guest's confirmation. Guests have
-// no accounts, so this is the only way back to a reservation.
+// GET — look a booking up by the code on the guest's confirmation.
+//
+// Guests have no accounts, so this is the only way back to a reservation. It
+// returns the live ledger, not the booking snapshot: a guest who settles an
+// incidental balance lands back here, and a page still showing only what they
+// agreed to at booking would be telling them the wrong number.
 router.get("/code/:code", async (req: Request, res: Response) => {
   const { code } = req.params;
   try {
@@ -107,7 +112,20 @@ router.get("/code/:code", async (req: Request, res: Response) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Reservation not found' });
     }
-    res.json(result.rows[0]);
+
+    const row = result.rows[0];
+    const ledger = await readLedger(row.id, row.totalAmount, row.taxAmount);
+
+    // postedBy is stripped. It names the staff member who put a line on the
+    // bill, which the front desk needs for a disputed charge and the guest has
+    // no business seeing.
+    res.json({
+      ...row,
+      nights: nights(row.checkIn, row.checkOut),
+      charges: ledger.charges.map(({ postedBy, ...charge }) => charge),
+      payments: ledger.payments,
+      totals: ledger.totals,
+    });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
