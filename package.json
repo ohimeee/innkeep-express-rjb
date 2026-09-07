@@ -7,6 +7,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
+    "db:setup": "node scripts/db.mjs db/schema.sql",
+    "db:seed": "node scripts/db.mjs db/seed.sql",
     "lint": "eslint ."
   },
   "keywords": [],
