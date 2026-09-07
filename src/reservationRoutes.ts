@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { pool } from './db';
 import { validateResource } from './validate';
-import { createBookingSchema } from './schemas';
+import { createBookingSchema, createWalkInSchema } from './schemas';
 import { nights } from './dates';
 import { toCentavos, toMoney } from './money';
 import { quoteStay } from './pricing';
@@ -217,6 +217,102 @@ router.post("/", validateResource(createBookingSchema), async (req: Request, res
       );
       res.status(502).json({ error: 'We could not reach the payment provider. Please try again.' });
     }
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// POST — take a stay at the front desk.
+//
+// A walk-in has no hold and no invoice. A hold exists to keep a room while a
+// guest is away at a payment page; this guest is standing at the counter, so
+// there is nothing to reserve them against and nobody to wait for. The row goes
+// straight in as CONFIRMED.
+//
+// Payment is not collected here either. The room charge lands on the folio and
+// the check-out guard already refuses to release a guest who still owes money —
+// so the money is taken at exactly the right moment, by cash or by a payment
+// link, without this endpoint knowing anything about either.
+//
+// checkInNow puts them in the room in the same transaction. That matters: two
+// separate calls can half-fail and leave a CONFIRMED booking beside a room
+// still reading AVAILABLE with somebody's luggage in it. Unticked, this books a
+// stay for later — someone phoning ahead.
+router.post("/walk-in", validateResource(createWalkInSchema), async (req: Request, res: Response) => {
+  const { roomId, guestName, guestCount, checkIn, checkOut, checkInNow } = req.body;
+  try {
+    await releaseExpiredHolds();
+
+    const room = await pool.query(
+      `SELECT "capacity", "nightlyRate" FROM "Room" WHERE "id" = $1`,
+      [roomId]
+    );
+    if (room.rows.length === 0) {
+      return res.status(404).json({ error: 'That room is no longer listed.' });
+    }
+    if (guestCount > room.rows[0].capacity) {
+      return res.status(400).json({ error: 'That room does not sleep that many guests.' });
+    }
+
+    const quote = quoteStay(room.rows[0].nightlyRate, nights(checkIn, checkOut));
+
+    // Each attempt is its own transaction. A confirmation-code collision aborts
+    // the transaction it happens in, so the retry has to start a fresh one
+    // rather than carry on inside a broken transaction.
+    for (let attempt = 0; attempt < CODE_ATTEMPTS; attempt += 1) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+
+        // checkedInAt comes from SQL now(), not a JS Date. node-postgres
+        // serialises a Date in this machine's timezone, and TIMESTAMP carries
+        // no zone to correct it with — the column would end up holding Manila
+        // wall clocks beside the UTC that now() writes everywhere else.
+        const inserted = await client.query(
+          `INSERT INTO "Reservation" ("roomId", "confirmationCode", "guestName",
+                                      "guestCount", "checkIn", "checkOut", "status",
+                                      "totalAmount", "taxAmount",
+                                      "checkedInAt")
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
+                   CASE WHEN $10 THEN now() ELSE NULL END)
+           RETURNING *`,
+          [roomId, generateCode(), guestName, guestCount, checkIn, checkOut,
+           checkInNow ? 'CHECKED_IN' : 'CONFIRMED',
+           quote.total, quote.tax,
+           checkInNow]
+        );
+
+        if (checkInNow) {
+          await client.query(
+            `UPDATE "Room" SET "status" = 'OCCUPIED' WHERE "id" = $1`,
+            [roomId]
+          );
+        }
+
+        await client.query('COMMIT');
+        return res.status(201).json(inserted.rows[0]);
+      } catch (error) {
+        await client.query('ROLLBACK');
+        const code = (error as { code?: string }).code;
+
+        // Someone already holds or occupies this room across these dates.
+        if (code === '23P01') {
+          return res.status(409).json({
+            error: 'That room is already taken for those dates.',
+          });
+        }
+        // Code collision — reroll. Any other unique violation is a real bug.
+        if (code === '23505' &&
+            (error as { constraint?: string }).constraint === 'Reservation_confirmationCode_key') {
+          continue;
+        }
+        throw error;
+      } finally {
+        client.release();
+      }
+    }
+
+    res.status(500).json({ error: 'Could not generate a confirmation code.' });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }

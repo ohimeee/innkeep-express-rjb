@@ -82,42 +82,66 @@ export const updateRoomSchema = z.object({
 
 export type RoomInput = z.infer<typeof roomBodySchema>;
 
+// The fields any stay needs, however it was taken.
+//
 // The price is deliberately absent: it is recomputed from the room's stored
 // rate. A total posted by the client is never trusted.
-export const bookingBodySchema = z
-  .object({
-    roomId: z.string().min(1, "Pick a room first."),
-    guestName: z
-      .string()
-      .trim()
-      .min(1, "Enter the name the reservation is held under.")
-      .max(120, "That name is too long."),
-    guestCount: z
-      .number()
-      .int()
-      .min(MIN_GUESTS, "At least one guest.")
-      .max(MAX_GUESTS, `We can seat at most ${MAX_GUESTS} guests in a room.`),
-    checkIn: z.string().regex(DATE_PATTERN, "Check-in date is missing."),
-    checkOut: z.string().regex(DATE_PATTERN, "Check-out date is missing."),
-  })
-  .refine((value) => value.checkOut > value.checkIn, {
-    message: "Check-out has to be after check-in.",
-    path: ["checkOut"],
-  })
-  // YYYY-MM-DD compares correctly as a string, so this needs no Date object and
-  // therefore has no timezone behaviour. See dates.ts.
-  .refine((value) => value.checkIn >= today(), {
-    message: "That check-in date has already passed.",
-    path: ["checkIn"],
-  })
-  .refine((value) => nights(value.checkIn, value.checkOut) <= MAX_NIGHTS, {
-    message: `Stays are capped at ${MAX_NIGHTS} nights — call the front desk for longer.`,
-    path: ["checkOut"],
-  });
+const stayFields = {
+  roomId: z.string().min(1, "Pick a room first."),
+  guestName: z
+    .string()
+    .trim()
+    .min(1, "Enter the name the reservation is held under.")
+    .max(120, "That name is too long."),
+  guestCount: z
+    .number()
+    .int()
+    .min(MIN_GUESTS, "At least one guest.")
+    .max(MAX_GUESTS, `We can seat at most ${MAX_GUESTS} guests in a room.`),
+  checkIn: z.string().regex(DATE_PATTERN, "Check-in date is missing."),
+  checkOut: z.string().regex(DATE_PATTERN, "Check-out date is missing."),
+};
+
+// The rules a stay has to satisfy, shared by both ways of taking one.
+// YYYY-MM-DD compares correctly as a string, so none of this needs a Date
+// object and none of it has timezone behaviour. See dates.ts.
+const withStayRules = <T extends z.ZodTypeAny>(schema: T) =>
+  schema
+    .refine((value: any) => value.checkOut > value.checkIn, {
+      message: "Check-out has to be after check-in.",
+      path: ["checkOut"],
+    })
+    .refine((value: any) => value.checkIn >= today(), {
+      message: "That check-in date has already passed.",
+      path: ["checkIn"],
+    })
+    .refine((value: any) => nights(value.checkIn, value.checkOut) <= MAX_NIGHTS, {
+      message: `Stays are capped at ${MAX_NIGHTS} nights — call the front desk for longer.`,
+      path: ["checkOut"],
+    });
+
+export const bookingBodySchema = withStayRules(z.object(stayFields));
 
 export const createBookingSchema = z.object({
   body: bookingBodySchema,
 });
+
+// A stay taken at the desk. No hold and no invoice — the guest is standing
+// there, so there is nothing to reserve them against and nobody to wait for.
+export const walkInBodySchema = withStayRules(
+  z.object({
+    ...stayFields,
+    // A walk-in is checked in on the spot. Unticked, this books a stay for
+    // later — someone phoning ahead for next week.
+    checkInNow: z.boolean().default(true),
+  })
+);
+
+export const createWalkInSchema = z.object({
+  body: walkInBodySchema,
+});
+
+export type WalkInInput = z.infer<typeof walkInBodySchema>;
 
 export type BookingInput = z.infer<typeof bookingBodySchema>;
 
