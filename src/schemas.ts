@@ -148,14 +148,6 @@ export type ChargeInput = z.infer<typeof chargeBodySchema>;
 export const paymentBodySchema = z.object({
   amount: pesoAmount("Amount"),
   method: z.enum(PAYMENT_METHODS),
-  cardLast4: z
-    .string()
-    .trim()
-    .nullable()
-    .transform((value) => (value === "" ? null : value))
-    .refine((value) => value === null || /^\d{4}$/.test(value), {
-      message: "Last four digits only — four numbers, nothing else.",
-    }),
 });
 
 export const createPaymentSchema = z.object({

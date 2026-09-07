@@ -125,10 +125,7 @@ CREATE TABLE IF NOT EXISTS "Payment" (
   "method"            "PaymentMethod" NOT NULL,
   "paidAt"            TIMESTAMP(3) NOT NULL DEFAULT now(),
   "providerInvoiceId" TEXT,
-  "providerEventId"   TEXT,
-  -- Last four digits only, for the line the folio prints. Never the full
-  -- number: the card is entered on Xendit's page and never reaches this server.
-  "cardLast4"         TEXT
+  "providerEventId"   TEXT
 );
 
 -- Bring an already-created database up to the definitions above. The CREATE
@@ -176,7 +173,6 @@ ALTER TABLE "Charge"      ADD COLUMN IF NOT EXISTS "department" "ChargeDepartmen
 ALTER TABLE "Charge"      ADD COLUMN IF NOT EXISTS "postedBy"     TEXT;
 ALTER TABLE "Reservation" ADD COLUMN IF NOT EXISTS "checkedInAt"  TIMESTAMP(3);
 ALTER TABLE "Reservation" ADD COLUMN IF NOT EXISTS "checkedOutAt" TIMESTAMP(3);
-ALTER TABLE "Payment"     ADD COLUMN IF NOT EXISTS "cardLast4"    TEXT;
 
 -- A folio reads every charge on one reservation, so that is the lookup to
 -- support. Ordered by time, because a bill is read in the order it was run up.

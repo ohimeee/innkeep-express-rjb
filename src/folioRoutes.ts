@@ -44,7 +44,7 @@ router.get("/:code", async (req: Request, res: Response) => {
     );
 
     const payments = await pool.query(
-      `SELECT "id", "paidAt", "amount", "method", "cardLast4"
+      `SELECT "id", "paidAt", "amount", "method"
          FROM "Payment" WHERE "reservationId" = $1 ORDER BY "paidAt" ASC`,
       [row.id]
     );
@@ -125,7 +125,7 @@ router.post("/:id/charges", validateResource(createChargeSchema), async (req: Re
 // collide on NULL.
 router.post("/:id/payments", validateResource(createPaymentSchema), async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { amount, method, cardLast4 } = req.body;
+  const { amount, method } = req.body;
   try {
     const reservation = await pool.query(
       `SELECT "id" FROM "Reservation" WHERE "id" = $1`, [id]
@@ -135,10 +135,10 @@ router.post("/:id/payments", validateResource(createPaymentSchema), async (req: 
     }
 
     const result = await pool.query(
-      `INSERT INTO "Payment" ("reservationId", "amount", "method", "paidAt", "cardLast4")
-       VALUES ($1, $2, $3, now(), $4)
+      `INSERT INTO "Payment" ("reservationId", "amount", "method", "paidAt")
+       VALUES ($1, $2, $3, now())
        RETURNING *`,
-      [id, amount, method, cardLast4]
+      [id, amount, method]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {

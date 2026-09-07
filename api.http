@@ -162,8 +162,7 @@ Content-Type: application/json
 
 {
   "amount": "450",
-  "method": "CASH",
-  "cardLast4": null
+  "method": "CASH"
 }
 
 ### Check out — WRITES
