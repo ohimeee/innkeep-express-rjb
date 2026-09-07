@@ -36,6 +36,8 @@ export const RESERVATION_STATUSES = [
   "CHECKED_IN",
   "CHECKED_OUT",
   "CANCELLED",
+  // Paid, never arrived, never checked in. Money the hotel keeps.
+  "NO_SHOW",
 ] as const;
 export type ReservationStatus = (typeof RESERVATION_STATUSES)[number];
 

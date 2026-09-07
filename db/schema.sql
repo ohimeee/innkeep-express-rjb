@@ -56,6 +56,13 @@ $$ LANGUAGE plpgsql;
 -- and the exclusion constraint below names PENDING in its predicate.
 ALTER TYPE "ReservationStatus" ADD VALUE IF NOT EXISTS 'PENDING' BEFORE 'CONFIRMED';
 
+-- A guest who paid, never arrived, and was never checked in. Distinct from
+-- CANCELLED on purpose: a cancellation may be refunded, a no-show is money the
+-- hotel keeps, and the front desk needs to see which happened. Like CANCELLED
+-- it sits outside the no-double-booking predicate, so marking one frees the
+-- room immediately.
+ALTER TYPE "ReservationStatus" ADD VALUE IF NOT EXISTS 'NO_SHOW' AFTER 'CANCELLED';
+
 -- @separate
 
 CREATE TABLE IF NOT EXISTS "Room" (
@@ -69,6 +76,11 @@ CREATE TABLE IF NOT EXISTS "Room" (
   "imageUrl"    TEXT,
   "nightlyRate" DECIMAL(10,2) NOT NULL,
   "status"      "RoomStatus" NOT NULL DEFAULT 'AVAILABLE',
+  -- Taken off the market: a burst pipe, a broken aircon, a refurbishment. It
+  -- stops new bookings without deleting the room or losing its history.
+  -- Distinct from "status", which is housekeeping's "is somebody in there
+  -- right now" and says nothing about whether the room is sellable.
+  "outOfService" BOOLEAN NOT NULL DEFAULT false,
   "createdAt"   TIMESTAMP(3) NOT NULL DEFAULT now(),
   "updatedAt"   TIMESTAMP(3) NOT NULL DEFAULT now()
 );
@@ -172,6 +184,7 @@ ALTER TABLE "Reservation" ALTER COLUMN "status" SET DEFAULT 'PENDING';
 ALTER TABLE "Charge"      ADD COLUMN IF NOT EXISTS "department" "ChargeDepartment" NOT NULL DEFAULT 'OTHER';
 ALTER TABLE "Charge"      ADD COLUMN IF NOT EXISTS "postedBy"     TEXT;
 ALTER TABLE "Reservation" ADD COLUMN IF NOT EXISTS "checkedInAt"  TIMESTAMP(3);
+ALTER TABLE "Room"        ADD COLUMN IF NOT EXISTS "outOfService" BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE "Reservation" ADD COLUMN IF NOT EXISTS "checkedOutAt" TIMESTAMP(3);
 
 -- A folio reads every charge on one reservation, so that is the lookup to

@@ -66,6 +66,9 @@ export const roomBodySchema = z.object({
   description: optionalText(400, "Keep the description under 400 characters.")
     .nullable(),
   imageUrl: optionalText(500, "That URL is too long.").nullable(),
+  // Taken off the market for maintenance. Stops new bookings; existing ones
+  // are untouched, because a guest already in the room is a different problem.
+  outOfService: z.boolean().default(false),
 });
 
 // Create a wrapper schema for our generic Express middleware

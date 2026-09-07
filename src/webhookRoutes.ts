@@ -22,8 +22,24 @@ router.post("/xendit", async (req: Request, res: Response) => {
 
   const event = req.body as XenditInvoiceEvent;
 
-  // "PAID" — not COMPLETED, not SUCCEEDED. Anything else (EXPIRED, PENDING) is
-  // acknowledged so Xendit stops retrying, but changes nothing.
+  // An invoice that expired or failed means the guest is not coming back to
+  // this checkout. The hold sweep would clear it eventually, but only after the
+  // full fifteen minutes — releasing it now puts a sellable room back on the
+  // market immediately. Guarded on PENDING, so a paid booking can never be
+  // cancelled by a late "expired" for an earlier attempt.
+  if (event.status === 'EXPIRED' || event.status === 'FAILED') {
+    if (event.external_id) {
+      await pool.query(
+        `UPDATE "Reservation" SET "status" = 'CANCELLED', "holdExpiresAt" = NULL
+          WHERE "id" = $1 AND "status" = 'PENDING'`,
+        [event.external_id]
+      );
+    }
+    return res.json({ received: true, released: true });
+  }
+
+  // "PAID" — not COMPLETED, not SUCCEEDED. Anything else is acknowledged so
+  // Xendit stops retrying, but changes nothing.
   if (event.status !== 'PAID') {
     return res.json({ received: true, ignored: event.status ?? null });
   }

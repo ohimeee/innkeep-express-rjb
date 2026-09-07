@@ -33,7 +33,7 @@ router.get('/', async (req: Request, res: Response) => {
       // there this minute", which says nothing about tonight — a room reading
       // OCCUPIED whose guest leaves today is free tonight.
       `SELECT "id", "number", "name", "type", "capacity", "amenities",
-              "description", "imageUrl", "status", "nightlyRate",
+              "description", "imageUrl", "status", "nightlyRate", "outOfService",
               NOT EXISTS (
                 SELECT 1
                   FROM "Reservation" res
@@ -41,7 +41,7 @@ router.get('/', async (req: Request, res: Response) => {
                    AND res."status" IN ('PENDING', 'CONFIRMED', 'CHECKED_IN')
                    AND res."checkIn"  < CURRENT_DATE + 1
                    AND res."checkOut" > CURRENT_DATE
-              ) AS "availableTonight",
+              ) AND NOT r."outOfService" AS "availableTonight",
               -- When the stay covering tonight ends. Only one reservation can
               -- cover a given night — the exclusion constraint guarantees it —
               -- so this is that stay's check-out, not a guess.
@@ -61,6 +61,10 @@ router.get('/', async (req: Request, res: Response) => {
               ) AS "bookedUntil"
          FROM "Room" r
         WHERE r."capacity" >= $1
+          -- Out of service rooms stay in the catalog so staff can still see and
+          -- edit them, but they are never offered: availableTonight is forced
+          -- false below, and a dated search drops them entirely.
+          AND ($2::date IS NULL OR NOT r."outOfService")
           AND (
             $2::date IS NULL
             OR NOT EXISTS (
@@ -86,7 +90,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     const result = await pool.query(
       `SELECT "id", "number", "name", "type", "capacity", "amenities",
-              "description", "imageUrl", "status", "nightlyRate"
+              "description", "imageUrl", "status", "nightlyRate", "outOfService"
          FROM "Room" WHERE "id" = $1`,
       [id]
     );
@@ -101,14 +105,15 @@ router.get('/:id', async (req: Request, res: Response) => {
 
 // POST
 router.post("/", validateResource(createRoomSchema), async (req: Request, res: Response) => {
-  const { number, name, type, capacity, nightlyRate, status, amenities, description, imageUrl } = req.body;
+  const { number, name, type, capacity, nightlyRate, status, amenities, description, imageUrl, outOfService } = req.body;
   try {
     const result = await pool.query(
       `INSERT INTO "Room" ("number", "name", "type", "capacity", "nightlyRate",
-                           "status", "amenities", "description", "imageUrl")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                           "status", "amenities", "description", "imageUrl",
+                           "outOfService")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
-      [number, name, type, capacity, nightlyRate, status, amenities, description, imageUrl]
+      [number, name, type, capacity, nightlyRate, status, amenities, description, imageUrl, outOfService ?? false]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -124,16 +129,16 @@ router.post("/", validateResource(createRoomSchema), async (req: Request, res: R
 // PUT
 router.put("/:id", validateResource(updateRoomSchema), async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { number, name, type, capacity, nightlyRate, status, amenities, description, imageUrl } = req.body;
+  const { number, name, type, capacity, nightlyRate, status, amenities, description, imageUrl, outOfService } = req.body;
   try {
     const result = await pool.query(
       `UPDATE "Room"
           SET "number" = $2, "name" = $3, "type" = $4, "capacity" = $5,
               "nightlyRate" = $6, "status" = $7, "amenities" = $8,
-              "description" = $9, "imageUrl" = $10
+              "description" = $9, "imageUrl" = $10, "outOfService" = $11
         WHERE "id" = $1
        RETURNING *`,
-      [id, number, name, type, capacity, nightlyRate, status, amenities, description, imageUrl]
+      [id, number, name, type, capacity, nightlyRate, status, amenities, description, imageUrl, outOfService ?? false]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Room not found' });

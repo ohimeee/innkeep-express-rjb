@@ -342,6 +342,187 @@ router.post("/walk-in", validateResource(createWalkInSchema), async (req: Reques
   }
 });
 
+// POST — cancel a booking.
+//
+// Only a stay that has not started. A CHECKED_IN guest is physically in the
+// room, and getting them out is a check-out, not a cancellation; a CHECKED_OUT
+// one is history.
+//
+// Nothing touches Room.status. A booking that was never checked in never set
+// it, so there is nothing to undo — the room frees the moment the status
+// changes, because a CANCELLED row falls outside the no-double-booking
+// predicate.
+//
+// Money already taken is reported, not reversed. Refunding through Xendit is a
+// separate operation, and quietly marking a paid booking cancelled while
+// saying nothing about the money would be the worst of both.
+router.post("/:id/cancel", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const found = await pool.query(
+      `SELECT res."status", res."confirmationCode",
+              COALESCE((SELECT SUM(p."amount") FROM "Payment" p
+                         WHERE p."reservationId" = res."id"), 0) AS "paid"
+         FROM "Reservation" res
+        WHERE res."id" = $1`,
+      [id]
+    );
+
+    if (found.rows.length === 0) {
+      return res.status(404).json({ error: 'That reservation no longer exists.' });
+    }
+
+    const { status, paid } = found.rows[0];
+
+    if (status === 'CHECKED_IN') {
+      return res.status(409).json({
+        error: 'That guest is already in the room. Check them out instead.',
+      });
+    }
+    if (status === 'CHECKED_OUT') {
+      return res.status(409).json({ error: 'That stay has already finished.' });
+    }
+    if (status === 'CANCELLED') {
+      return res.status(409).json({ error: 'That booking is already cancelled.' });
+    }
+
+    const updated = await pool.query(
+      `UPDATE "Reservation"
+          SET "status" = 'CANCELLED', "holdExpiresAt" = NULL
+        WHERE "id" = $1
+          AND "status" IN ('PENDING', 'CONFIRMED')
+       RETURNING "confirmationCode"`,
+      [id]
+    );
+
+    if (updated.rows.length === 0) {
+      return res.status(409).json({ error: 'That booking could not be cancelled.' });
+    }
+
+    res.json({
+      ok: true,
+      confirmationCode: updated.rows[0].confirmationCode,
+      // What the hotel now owes back. Refunding it is a separate job.
+      refundDue: toMoney(paid),
+    });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// POST — mark a booking a no-show.
+//
+// The guest paid, never arrived, and was never checked in. Distinct from a
+// cancellation: nothing is refunded, and the record should say which happened
+// rather than blur the two.
+//
+// Only worth doing once the arrival date has passed — before that they are
+// simply not here yet. Without this a no-show sits CONFIRMED forever, invisible
+// on a dashboard that only shows today's arrivals, blocking its room for dates
+// already in the past.
+router.post("/:id/no-show", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const found = await pool.query(
+      `SELECT res."status", res."checkIn" < CURRENT_DATE AS "arrivalPassed",
+              COALESCE((SELECT SUM(p."amount") FROM "Payment" p
+                         WHERE p."reservationId" = res."id"), 0) AS "kept"
+         FROM "Reservation" res
+        WHERE res."id" = $1`,
+      [id]
+    );
+
+    if (found.rows.length === 0) {
+      return res.status(404).json({ error: 'That reservation no longer exists.' });
+    }
+
+    const { status, arrivalPassed, kept } = found.rows[0];
+
+    if (status !== 'CONFIRMED') {
+      return res.status(409).json({
+        error: 'Only a confirmed booking that never arrived can be a no-show.',
+      });
+    }
+    if (!arrivalPassed) {
+      return res.status(409).json({
+        error: 'That guest is not late yet — their arrival date has not passed.',
+      });
+    }
+
+    const updated = await pool.query(
+      `UPDATE "Reservation" SET "status" = 'NO_SHOW', "holdExpiresAt" = NULL
+        WHERE "id" = $1 AND "status" = 'CONFIRMED'
+       RETURNING "confirmationCode"`,
+      [id]
+    );
+
+    if (updated.rows.length === 0) {
+      return res.status(409).json({ error: 'That booking could not be marked a no-show.' });
+    }
+
+    // Reported, not refunded. A no-show keeps what was paid.
+    res.json({ ok: true, kept: toMoney(kept) });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// POST — a guest cancels their own booking.
+//
+// Guests have no accounts, so the confirmation code is all they have. That code
+// is four digits, which is 10,000 guesses — small enough to walk through — so
+// the guest's name has to match as well. Not a strong second factor, but it
+// turns enumeration into enumeration plus guessing a name, and it is the most
+// this design allows without giving guests logins.
+//
+// The response is deliberately identical whether the code was wrong or the name
+// was, so this cannot be used to discover which codes exist.
+router.post("/code/:code/cancel", async (req: Request, res: Response) => {
+  const { code } = req.params;
+  const guestName = String(req.body?.guestName ?? '').trim();
+
+  if (!guestName) {
+    return res.status(400).json({ error: 'Enter the name the booking is under.' });
+  }
+
+  try {
+    const found = await pool.query(
+      `SELECT "id", "status"
+         FROM "Reservation"
+        WHERE "confirmationCode" = $1
+          AND lower("guestName") = lower($2)`,
+      [code, guestName]
+    );
+
+    if (found.rows.length === 0) {
+      return res.status(404).json({
+        error: 'No booking matches that code and name.',
+      });
+    }
+
+    const { id, status } = found.rows[0];
+
+    if (status === 'CHECKED_IN' || status === 'CHECKED_OUT') {
+      return res.status(409).json({
+        error: 'That stay has already started. Call the front desk.',
+      });
+    }
+    if (status !== 'PENDING' && status !== 'CONFIRMED') {
+      return res.status(409).json({ error: 'That booking is no longer active.' });
+    }
+
+    await pool.query(
+      `UPDATE "Reservation" SET "status" = 'CANCELLED', "holdExpiresAt" = NULL
+        WHERE "id" = $1 AND "status" IN ('PENDING', 'CONFIRMED')`,
+      [id]
+    );
+
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 // POST — mark a guest arrived.
 //
 // Two rows move together, the reservation's status and the room's housekeeping
