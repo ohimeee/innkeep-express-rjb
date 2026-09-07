@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { pool } from './db';
+import { fromCentavos } from './money';
 import { toPaymentMethod, verifyCallbackToken, XenditInvoiceEvent } from './payments';
 
 const router = Router();
@@ -50,6 +51,17 @@ router.post("/xendit", async (req: Request, res: Response) => {
 
     const reservation = found.rows[0];
 
+    // What actually moved, from the payload — not the reservation's total.
+    //
+    // One invoice kind is the booking; another is a folio balance settled at
+    // checkout. Recording totalAmount would be right for the first and would
+    // double-count the whole stay for the second. Xendit sends pesos, so this
+    // goes through centavos to reach a DECIMAL(10,2) string. See money.ts.
+    const paid = event.paid_amount ?? event.amount;
+    const amount = paid === undefined
+      ? reservation.totalAmount
+      : fromCentavos(Math.round(paid * 100));
+
     // The invoice callback carries no separate event id, so the invoice id is
     // the dedupe key — one invoice is paid once, and a redelivery repeats it.
     // The unique index on providerEventId is what makes that safe, and
@@ -63,7 +75,7 @@ router.post("/xendit", async (req: Request, res: Response) => {
        RETURNING "id"`,
       [
         reservation.id,
-        reservation.totalAmount,
+        amount,
         toPaymentMethod(event),
         // From the payload, not now(): a webhook redelivered an hour later
         // would otherwise stamp the wrong time on the folio.
@@ -73,8 +85,9 @@ router.post("/xendit", async (req: Request, res: Response) => {
       ]
     );
 
-    // Only promotes a PENDING row, so a duplicate delivery leaves an already
-    // confirmed booking exactly as it is.
+    // Only promotes a PENDING row. That one guard is what lets a single handler
+    // serve both invoice kinds: a booking is PENDING and gets confirmed, while
+    // a folio settled mid-stay is CHECKED_IN and keeps its status.
     const confirmed = await pool.query(
       `UPDATE "Reservation"
           SET "status" = 'CONFIRMED', "holdExpiresAt" = NULL

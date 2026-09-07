@@ -4,6 +4,8 @@ import { validateResource } from './validate';
 import { createChargeSchema, createPaymentSchema } from './schemas';
 import { nights } from './dates';
 import { fromCentavos, toCentavos } from './money';
+import { createInvoice } from './payments';
+import { BALANCE_EXPRESSION } from './reservationRoutes';
 
 const router = Router();
 
@@ -141,6 +143,49 @@ router.post("/:id/payments", validateResource(createPaymentSchema), async (req: 
       [id, amount, method]
     );
     res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+// POST — settle the outstanding balance through the payment gateway.
+//
+// The desk cannot simply assert that a guest paid by GCash or card: unlike cash
+// handed across a counter, there is no moment anybody witnessed. So this opens
+// a real Xendit invoice for what is owed, the guest pays it on their phone, and
+// the webhook records it with a providerInvoiceId that proves money moved.
+//
+// The amount is computed here from the ledger, never taken from the request —
+// the same rule the booking path follows.
+router.post("/:id/settle", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const found = await pool.query(
+      `SELECT res."id", res."confirmationCode", res."guestName",
+              (${BALANCE_EXPRESSION}) AS "balance"
+         FROM "Reservation" res
+        WHERE res."id" = $1`,
+      [id]
+    );
+
+    if (found.rows.length === 0) {
+      return res.status(404).json({ error: 'That reservation no longer exists.' });
+    }
+
+    const { confirmationCode, guestName, balance } = found.rows[0];
+
+    if (toCentavos(balance) <= 0) {
+      return res.status(409).json({ error: 'Nothing is owed on this folio.' });
+    }
+
+    const invoiceUrl = await createInvoice({
+      reservationId: String(id),
+      confirmationCode,
+      amount: balance,
+      description: `Folio balance — ${confirmationCode} (${guestName})`,
+    });
+
+    res.json({ invoiceUrl });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
