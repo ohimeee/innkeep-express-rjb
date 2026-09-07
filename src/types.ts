@@ -79,6 +79,10 @@ export interface Room {
   // Whether it can be booked for tonight. The catalog shows every room so the
   // property is on display, and this decides which of them offer Book Now.
   availableTonight: boolean;
+  // When the stay covering tonight ends, or null when nothing does. Says when
+  // the room frees from *that* booking — not a promise it is free after, since
+  // the next guest may already have it.
+  bookedUntil: string | null;
 }
 
 // Dates arrive as YYYY-MM-DD strings; timestamps arrive as ISO strings and

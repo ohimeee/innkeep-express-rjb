@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { UserRound } from "lucide-react";
 import { MoveRight } from "lucide-react";
 
+import { formatStayDate } from "../dates";
 import { formatPeso } from "../money";
 import { typeLabel, type Room } from "../types";
 
@@ -32,7 +33,9 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, href, searched }) => {
 
       {bookable ? null : (
         <div className="absolute top-0 right-0 z-10 bg-gray-700 p-2 text-xs font-semibold tracking-widest text-white">
-          Booked tonight
+          {room.bookedUntil
+            ? `Booked to ${formatStayDate(room.bookedUntil).replace(/^\w{3}, /, "")}`
+            : "Booked"}
         </div>
       )}
 
