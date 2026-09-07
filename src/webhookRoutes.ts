@@ -67,9 +67,17 @@ router.post("/xendit", async (req: Request, res: Response) => {
     // The unique index on providerEventId is what makes that safe, and
     // ON CONFLICT DO NOTHING is how it shows up here.
     const recorded = await pool.query(
+      // $4 is cast through timestamptz and back down to UTC on purpose.
+      //
+      // node-postgres serialises a JS Date using *this machine's* timezone, and
+      // casting straight into TIMESTAMP — which carries no zone — drops the
+      // offset, storing a Manila wall clock as though it were UTC. The column
+      // would then hold two different zones, since desk payments are written by
+      // SQL now() and are already UTC. Reading timestamptz first keeps the
+      // offset, and AT TIME ZONE 'UTC' lands the same UTC value now() writes.
       `INSERT INTO "Payment" ("reservationId", "amount", "method", "paidAt",
                               "providerInvoiceId", "providerEventId")
-       VALUES ($1, $2, $3, $4, $5, $6)
+       VALUES ($1, $2, $3, $4::timestamptz AT TIME ZONE 'UTC', $5, $6)
        ON CONFLICT ("providerEventId") WHERE "providerEventId" IS NOT NULL
          DO NOTHING
        RETURNING "id"`,
