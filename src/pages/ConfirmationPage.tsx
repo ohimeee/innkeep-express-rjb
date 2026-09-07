@@ -78,6 +78,8 @@ export const ConfirmationPage: React.FC = () => {
 
   const reservation = state.reservation;
   const failed = searchParams.get("payment") === "failed";
+  const { totals, charges } = reservation;
+  const settled = totals.settled;
   const stayNights = nights(reservation.checkIn, reservation.checkOut);
   const quote = quoteStay(reservation.nightlyRate, stayNights);
 
@@ -99,11 +101,25 @@ export const ConfirmationPage: React.FC = () => {
             heading: "This reservation was cancelled",
             body: "If you believe this is wrong, quote the code below to the front desk.",
           }
-        : {
-            label: "RESERVATION CONFIRMED",
-            heading: "You are booked",
-            body: "Keep the confirmation code below — it is what the front desk asks for at check-in.",
-          };
+        : reservation.status === "CHECKED_IN"
+          ? {
+              label: "CHECKED IN",
+              heading: "You are checked in",
+              body: settled
+                ? "Nothing is outstanding. Anything you add to the room appears below."
+                : "Anything added to the room appears below. Settle the balance at the front desk or on your phone.",
+            }
+          : reservation.status === "CHECKED_OUT"
+            ? {
+                label: "CHECKED OUT",
+                heading: "Thanks for staying",
+                body: "Your final bill is below. Quote the code if you need a copy from the front desk.",
+              }
+            : {
+                label: "RESERVATION CONFIRMED",
+                heading: "You are booked",
+                body: "Keep the confirmation code below — it is what the front desk asks for at check-in.",
+              };
 
   return (
     <div className="flex-col">
@@ -145,6 +161,27 @@ export const ConfirmationPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {charges.length > 0 ? (
+            <div className="mt-5 flex-col">
+              <p className="text-xl font-bold">Extras on your room</p>
+              <div className="mt-3 flex-col divide-y-2 divide-gray-400 border-2 border-gray-400">
+                {charges.map((charge) => (
+                  <div
+                    key={charge.id}
+                    className="flex justify-between p-3"
+                  >
+                    <span className="text-xs text-gray-500">
+                      {charge.description}
+                    </span>
+                    <span className="text-sm font-bold">
+                      {formatPeso(charge.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="flex-1">
@@ -172,18 +209,36 @@ export const ConfirmationPage: React.FC = () => {
 
             <div className="flex flex-col py-5">
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm">Taxes &amp; fees</span>
+                <span className="text-sm">Room &amp; taxes</span>
                 <span className="text-sm font-bold">
-                  {formatPeso(reservation.taxAmount)}
+                  {formatPeso(reservation.totalAmount)}
                 </span>
               </div>
-              <p className="text-xl font-bold">Total</p>
+              {charges.length > 0 ? (
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm">Extras</span>
+                  <span className="text-sm font-bold">
+                    {formatPeso(totals.incidentals)}
+                  </span>
+                </div>
+              ) : null}
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm">Paid</span>
+                <span className="text-sm font-bold text-gray-500">
+                  &minus;{formatPeso(totals.paid)}
+                </span>
+              </div>
+              <p className="text-xl font-bold">
+                {settled ? "Total paid" : "Balance due"}
+              </p>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-500">
                   Incl. taxes &amp; fees | PHP
                 </span>
                 <span className="text-3xl font-bold text-orange-500">
-                  {formatPeso(reservation.totalAmount)}
+                  {settled
+                    ? formatPeso(totals.paid)
+                    : formatPeso(totals.balance)}
                 </span>
               </div>
             </div>

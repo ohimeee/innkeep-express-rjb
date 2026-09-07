@@ -167,8 +167,15 @@ export interface Folio {
   totals: FolioTotals;
 }
 
-// A reservation joined to its room, for the confirmation page. taxAmount and
-// totalAmount are what was frozen at booking, not a recomputation.
+// What a guest sees on their own charges. Same as FolioCharge without
+// postedBy — who put a line on the bill is the front desk's business.
+export type GuestCharge = Omit<FolioCharge, "postedBy">;
+
+// A reservation joined to its room, for the confirmation page.
+//
+// It carries the live ledger, not just the booking snapshot: a guest who
+// settles an incidental balance lands back on this page, and showing only what
+// they agreed to at booking would be the wrong number.
 export interface ReservationDetail {
   id: string;
   confirmationCode: string;
@@ -183,4 +190,8 @@ export interface ReservationDetail {
   roomNumber: string;
   roomType: RoomType;
   nightlyRate: string;
+  nights: number;
+  charges: GuestCharge[];
+  payments: FolioPayment[];
+  totals: FolioTotals;
 }
