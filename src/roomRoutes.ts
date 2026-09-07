@@ -41,7 +41,24 @@ router.get('/', async (req: Request, res: Response) => {
                    AND res."status" IN ('PENDING', 'CONFIRMED', 'CHECKED_IN')
                    AND res."checkIn"  < CURRENT_DATE + 1
                    AND res."checkOut" > CURRENT_DATE
-              ) AS "availableTonight"
+              ) AS "availableTonight",
+              -- When the stay covering tonight ends. Only one reservation can
+              -- cover a given night — the exclusion constraint guarantees it —
+              -- so this is that stay's check-out, not a guess.
+              --
+              -- It says when the room frees *from this booking*, which is not a
+              -- promise that it is free after: the next guest may already have
+              -- it. Stating the fact beats "Booked tonight", which reads like
+              -- "try tomorrow" on a room somebody has for a week.
+              (
+                SELECT res."checkOut"
+                  FROM "Reservation" res
+                 WHERE res."roomId" = r."id"
+                   AND res."status" IN ('PENDING', 'CONFIRMED', 'CHECKED_IN')
+                   AND res."checkIn"  < CURRENT_DATE + 1
+                   AND res."checkOut" > CURRENT_DATE
+                 LIMIT 1
+              ) AS "bookedUntil"
          FROM "Room" r
         WHERE r."capacity" >= $1
           AND (
