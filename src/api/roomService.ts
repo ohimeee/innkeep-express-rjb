@@ -4,8 +4,17 @@ import { toSearchParams, type RoomQuery } from "../search";
 const API_BASE = 'http://localhost:3000/api';
 
 // GET — the catalog, filtered by dates and guest count when they are given.
+// Rooms out of service are left out; the guest side never wants them.
 export const fetchRooms = async (query: RoomQuery): Promise<Room[]> => {
   const response = await fetch(`${API_BASE}/rooms?${toSearchParams(query)}`);
+  if (!response.ok) throw new Error('Failed to fetch rooms');
+  return response.json();
+};
+
+// GET — every room including the ones out of service. For the admin inventory,
+// which has to show a room taken off the market so somebody can put it back.
+export const fetchAllRooms = async (): Promise<Room[]> => {
+  const response = await fetch(`${API_BASE}/rooms?guests=1&all=true`);
   if (!response.ok) throw new Error('Failed to fetch rooms');
   return response.json();
 };
