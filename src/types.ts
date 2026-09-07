@@ -76,6 +76,9 @@ export interface Room {
   imageUrl: string | null;
   status: RoomStatus;
   nightlyRate: string;
+  // Whether it can be booked for tonight. The catalog shows every room so the
+  // property is on display, and this decides which of them offer Book Now.
+  availableTonight: boolean;
 }
 
 // Dates arrive as YYYY-MM-DD strings; timestamps arrive as ISO strings and

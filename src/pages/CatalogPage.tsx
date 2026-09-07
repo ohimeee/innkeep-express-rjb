@@ -9,9 +9,6 @@ export const CatalogPage: React.FC = () => {
         <h1 className="text-4xl font-bold">Rooms &amp; suites</h1>
       </div>
 
-      {/* Still the static bar from the design. Wiring it to the search is
-          IMPLEMENTATION2.md step 7 — RoomList already reads the URL, so it
-          only needs inputs that push dates into it. */}
       <InfoBar />
 
       <RoomList />

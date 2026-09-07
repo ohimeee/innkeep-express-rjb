@@ -60,6 +60,9 @@ export const RoomList: React.FC = () => {
           key={room.id}
           room={room}
           href={checkoutHref(room.id, query)}
+          // With dates chosen, everything on screen is already free for them.
+          // Without, the card falls back to whether it is free tonight.
+          searched={Boolean(query.checkIn && query.checkOut)}
         />
       ))}
     </div>
