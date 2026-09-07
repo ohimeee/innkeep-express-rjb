@@ -61,3 +61,9 @@ export const checkoutHref = (roomId: string, query: RoomQuery): string => {
   params.set("room", roomId);
   return `/booking/checkout?${params.toString()}`;
 };
+
+// The folio is keyed on the confirmation code rather than the reservation's
+// uuid: it is what the guest reads off their phone and what the front desk
+// types, so a folio URL is something a person can arrive at from a booking.
+export const folioHref = (confirmationCode: string): string =>
+  `/admin/reservations/${encodeURIComponent(confirmationCode)}`;
