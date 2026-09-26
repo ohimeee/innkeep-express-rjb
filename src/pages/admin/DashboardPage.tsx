@@ -121,91 +121,82 @@ export const DashboardPage: React.FC = () => {
   ];
 
   return (
-    <div>
-      <div className="text-[11px] font-semibold tracking-[.14em] text-[#ec3013] uppercase">
-        Today at a glance
-      </div>
-      <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="font-heading m-0 text-[42px] leading-none font-extrabold tracking-tight">
-          Dashboard
-        </h1>
-        <div className="text-[13px] text-[#201e1d]/55">
-          {formatToday()} · Iloilo City
+    <div className="space-y-8">
+      <div>
+        <div className="text-xs font-bold tracking-[.14em] text-[#E76F1D] uppercase">
+          Today at a glance
+        </div>
+        <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
+            <p className="mt-2 text-sm">
+              Manage today's arrivals, departures, and room activity.
+            </p>
+          </div>
+          <div className="text-sm font-medium">
+            {formatToday()} · Iloilo City
+          </div>
         </div>
       </div>
-      <hr className="mt-6 h-0.5 border-0 bg-[#201e1d]/40" />
 
       {/* Stats */}
-      <div className="mt-8 grid grid-cols-2 border border-[#201e1d]/40 md:grid-cols-4">
-        {stats.map((stat, i) => (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map((stat) => (
           <div
             key={stat.label}
-            className={[
-              "p-4",
-              i % 2 !== 0 ? "border-l-2 border-[#201e1d]/40 md:border-l-2" : "",
-              i >= 2 ? "border-t-2 border-[#201e1d]/40 md:border-t-0" : "",
-              i % 4 !== 0
-                ? "md:border-l-2 md:border-[#201e1d]/40"
-                : "md:border-l-0",
-            ].join(" ")}
+            className="rounded-sm border border-gray-300 bg-white p-5 transition-shadow hover:shadow-sm"
           >
-            <div className="text-[10px] font-semibold tracking-wide text-[#ec3013] uppercase">
+            <div className="text-xs font-bold tracking-wider text-orange-500 uppercase">
               {stat.label}
             </div>
-            <div className="font-heading mt-2 text-[38px] leading-none font-extrabold tracking-tight tabular-nums">
+            <div className="mt-3 text-4xl font-bold tracking-tight">
               {stat.value}
             </div>
-            <div className="mt-1.5 text-[11px] text-[#201e1d]/55">
-              {stat.note}
-            </div>
+            <div className="mt-2 text-xs text-gray-500">{stat.note}</div>
           </div>
         ))}
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         {/* Check-ins */}
-        <section>
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="m-0 text-xl font-extrabold tracking-tight">
+        <section className="rounded-sm border border-gray-300 bg-white">
+          <div className="flex flex-col gap-2 border-b border-gray-300 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-xl font-bold tracking-tight">
               Expected check-ins
             </h2>
-            <span className="text-xs text-[#201e1d]/55">
+            <p className="text-xs mt-1 text-gray-500">
               Standard check-in from 3:00 PM
-            </span>
+            </p>
           </div>
 
           {arrivals.length > 0 ? (
-            <div className="mt-4 flex flex-col border border-[#201e1d]/40">
+            <div>
               {arrivals.map((stay, i) => {
                 const arrived = stay.status === "CHECKED_IN";
 
                 return (
                   <div
                     key={stay.id}
-                    className={`flex flex-wrap items-center gap-3 p-4 ${
-                      i > 0 ? "border-t-2 border-[#201e1d]/40" : ""
+                    className={`flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between ${
+                      i > 0 ? "border-t border-black" : ""
                     }`}
                   >
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[15px] font-extrabold">
-                          {stay.guestName}
-                        </span>
+                        <span className="font-bold">{stay.guestName}</span>
                         <span
-                          className={`inline-flex items-center px-2 py-1 text-[9px] font-extrabold tracking-widest ${
+                          className={`px-2 py-1 text-[9px] font-bold tracking-wider uppercase ${
                             arrived
-                              ? "bg-[#e15b47] text-[#f3f2f2]"
-                              : "bg-[#ec3013] text-[#f3f2f2]"
+                              ? "bg-orange-500 text-gray-300"
+                              : "bg-orange-600 text-white"
                           }`}
                         >
-                          {arrived ? "CHECKED IN" : "CONFIRMED"}
+                          {arrived ? "Checked in" : "Confirmed"}
                         </span>
                       </div>
-                      <div className="mt-1 text-xs text-[#201e1d]/60">
-                        {stayLine(stay)}
-                      </div>
+                      <div className="mt-2 text-xs">{stayLine(stay)}</div>
                       {arrived && stay.checkedInAt ? (
-                        <div className="mt-1 text-[11px] text-[#201e1d]/50 tabular-nums">
+                        <div className="mt-1 text-[11px]">
                           Checked in {formatStamp(new Date(stay.checkedInAt))}
                         </div>
                       ) : null}
@@ -214,7 +205,7 @@ export const DashboardPage: React.FC = () => {
                     {arrived ? (
                       <Link
                         to={folioHref(stay.confirmationCode)}
-                        className="inline-flex items-center gap-2 border border-[#201e1d]/40 px-3.5 py-2.5 text-xs font-semibold text-[#201e1d]"
+                        className="inline-flex items-center justify-center border border-[#2B355A] px-4 py-2.5 text-xs font-bold transition-colors hover:bg-blue-950 hover:text-white"
                       >
                         View folio
                       </Link>
@@ -225,7 +216,7 @@ export const DashboardPage: React.FC = () => {
                         label="Check in"
                         pendingLabel="Checking in…"
                         onDone={loadDashboard}
-                        className="bg-[#ec3013] text-[#f3f2f2] hover:bg-[#d32a10]"
+                        className="bg-orange-500 text-white hover:bg-orange-400"
                       />
                     )}
                   </div>
@@ -233,11 +224,9 @@ export const DashboardPage: React.FC = () => {
               })}
             </div>
           ) : (
-            <div className="mt-4 border border-[#201e1d]/40 p-8">
-              <div className="text-[17px] font-extrabold tracking-tight">
-                No arrivals today
-              </div>
-              <p className="mt-1.5 max-w-[44ch] text-[12.5px] leading-relaxed text-[#201e1d]/60">
+            <div className="p-5">
+              <div className="font-bold">No arrivals today</div>
+              <p className="mt-2 max-w-[44ch] text-sm leading-relaxed text-gray-500">
                 Nobody is due to check in. Confirmed reservations for later
                 dates appear here on the morning of arrival.
               </p>
@@ -246,45 +235,43 @@ export const DashboardPage: React.FC = () => {
         </section>
 
         {/* Check-outs */}
-        <section>
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="m-0 text-xl font-extrabold tracking-tight">
+        <section className="rounded-sm border border-gray-300 bg-white">
+          <div className="flex flex-col gap-2 border-b border-gray-300 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-xl font-bold tracking-tight">
               Expected check-outs
             </h2>
-            <span className="text-xs text-[#201e1d]/55">
+            <span className="text-xs mt-1 text-gray-500">
               Standard check-out by 11:00 AM
             </span>
           </div>
 
           {departures.length > 0 ? (
-            <div className="mt-4 flex flex-col border border-[#201e1d]/40">
+            <div>
               {departures.map((stay, i) => {
                 return (
                   <div
                     key={stay.id}
-                    className={`flex flex-wrap items-center gap-3 p-4 ${
-                      i > 0 ? "border-t-2 border-[#201e1d]/40" : ""
+                    className={`flex flex-col gap-4 p-5 sm:flex-row sm:items-center ${
+                      i > 0 ? "border-t-2 border-black" : ""
                     }`}
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="text-[15px] font-extrabold">
-                        {stay.guestName}
-                      </div>
-                      <div className="mt-1 text-xs text-[#201e1d]/60">
+                      <div className=" font-bold">{stay.guestName}</div>
+                      <div className="mt-1 text-xs">
                         {stay.roomLabel} · {stay.confirmationCode}
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="sm:text-right">
                       <div
-                        className={`text-[15px] font-extrabold tabular-nums ${
-                          stay.owing ? "text-[#ec3013]" : "text-[#201e1d]/45"
+                        className={`font-bold ${
+                          stay.owing ? "text-orange-500" : "text-black"
                         }`}
                       >
                         {formatPeso(stay.balance)}
                       </div>
                       <Link
                         to={folioHref(stay.confirmationCode)}
-                        className="mt-0.5 block text-[11px] text-[#201e1d]/55 hover:text-[#b8250e]"
+                        className="text-[11px] text-black hover:text-orange-500"
                       >
                         {stay.owing
                           ? "Balance due · open folio"
@@ -305,11 +292,9 @@ export const DashboardPage: React.FC = () => {
               })}
             </div>
           ) : (
-            <div className="mt-4 border border-[#201e1d]/40 p-8">
-              <div className="text-[17px] font-extrabold tracking-tight">
-                No departures due
-              </div>
-              <p className="mt-1.5 max-w-[44ch] text-[12.5px] leading-relaxed text-[#201e1d]/60">
+            <div className="p-5">
+              <div className="font-bold">No departures due</div>
+              <p className="mt-2 max-w-[44ch] text-sm leading-relaxed text-gray-500">
                 No in-house guest is due to leave. Balances to settle will
                 appear here on the morning of departure.
               </p>
