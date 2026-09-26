@@ -123,7 +123,7 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-8">
       <div>
-        <div className="text-xs font-bold tracking-[.14em] text-[#E76F1D] uppercase">
+        <div className="text-xs font-bold tracking-[.14em] text-orange-500 uppercase">
           Today at a glance
         </div>
         <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

@@ -25,19 +25,10 @@ const STATUS_LABEL: Record<ReservationStatus, string> = {
   NO_SHOW: "NO SHOW",
 };
 
-const STATUS_CLASSES: Record<ReservationStatus, string> = {
-  PENDING: "border border-[#ec3013] bg-[#ec3013]/10 text-[#b8250e]",
-  CONFIRMED: "bg-[#ec3013] text-[#f3f2f2]",
-  CHECKED_IN: "bg-[#e15b47] text-[#f3f2f2]",
-  CHECKED_OUT: "bg-[#eae9e9] text-[#201e1d]/70",
-  CANCELLED: "border border-[#201e1d]/40 text-[#201e1d]/45",
-  NO_SHOW: "border border-[#201e1d]/40 bg-[#201e1d]/10 text-[#201e1d]/60",
-};
-
 const BackLink: React.FC = () => (
   <Link
     to="/admin/reservations"
-    className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#ec3013] hover:text-[#b8250e]"
+    className="inline-flex items-center gap-1.5 text-sm font-bold text-orange-500 transition-colors hover:text-gray-500"
   >
     <svg
       width="15"
@@ -173,55 +164,65 @@ export const FolioPage: React.FC = () => {
   ];
 
   return (
-    <div>
+    <div className="space-y-8">
       <BackLink />
 
-      <div className="mt-4 text-[11px] font-semibold tracking-[.14em] text-[#ec3013] uppercase">
-        Folio · {folio.confirmationCode}
+      <div>
+        <div className="text-xs font-bold tracking-[.18em] text-orange-500 uppercase">
+          Folio · {folio.confirmationCode}
+        </div>
+        <div className="mt-3 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight">
+              {folio.guestName}
+            </h1>
+            <p className="mt-2 text-sm text-[#77736D]">
+              {folio.roomName} · Room {folio.roomNumber}
+            </p>
+            <div
+              className={`mt-2 w-fit px-3 py-1.5 text-xs font-bold tracking-wider uppercase ${
+                folio.status === "CONFIRMED"
+                  ? "bg-orange-500 text-white"
+                  : folio.status === "CHECKED_IN"
+                    ? "bg-gray-300"
+                    : "border border-gray-300 text-gray-500"
+              }`}
+            >
+              {STATUS_LABEL[folio.status]}
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
-        <h1 className="font-heading m-0 text-[42px] leading-none font-extrabold tracking-tight">
-          {folio.guestName}
-        </h1>
-        <span
-          className={`inline-flex px-3 py-1.5 text-[10px] font-extrabold tracking-widest ${
-            STATUS_CLASSES[folio.status]
-          }`}
-        >
-          {STATUS_LABEL[folio.status]}
-        </span>
-      </div>
-      <hr className="mt-6 h-0.5 border-0 bg-[#201e1d]/40" />
 
-      <div className="mt-8 grid items-start gap-8 md:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="flex flex-col gap-8">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-6">
           {/* Stay summary */}
-          <section>
-            <h2 className="m-0 text-xl font-extrabold tracking-tight">
-              Stay summary
-            </h2>
-            <div className="mt-4 grid grid-cols-2 border border-[#201e1d]/40 md:grid-cols-4">
+          <section className="rounded-sm border border-gray-300 bg-white">
+            <div className="border-b border-gray-300 px-5 py-4">
+              <h2 className="text-xl font-bold">Stay summary</h2>
+              <p className="mt-1 text-xs text-[#77736D]">
+                Reservation details and stay information.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
               {stay.map((cell, i) => (
                 <div
                   key={cell.label}
                   className={[
-                    "p-4",
-                    i % 2 !== 0 ? "border-l-2 border-[#201e1d]/40" : "",
-                    i >= 2
-                      ? "border-t-2 border-[#201e1d]/40 md:border-t-0"
-                      : "",
-                    i % 4 !== 0
-                      ? "md:border-l-2 md:border-[#201e1d]/40"
-                      : "md:border-l-0",
+                    "p-5",
+                    i > 0 ? "border-t border-[#E5DBCA] sm:border-t-0" : "",
+                    i % 2 !== 0 ? "sm:border-l sm:border-[#E5DBCA]" : "",
+                    i >= 2 ? "xl:border-t-0" : "",
+                    i >= 4 ? "xl:border-t" : "",
                   ].join(" ")}
                 >
-                  <div className="text-[10px] font-semibold tracking-wide text-[#ec3013] uppercase">
+                  <div className="text-xs font-bold tracking-wider text-orange-500 uppercase">
                     {cell.label}
                   </div>
-                  <div className="mt-2 text-[15px] font-extrabold">
+                  <div className="mt-2 font-bold">
                     {cell.value}
                   </div>
-                  <div className="mt-1 text-[11px] text-[#201e1d]/55">
+                  <div className="mt-1 text-xs">
                     {cell.note}
                   </div>
                 </div>
@@ -342,17 +343,17 @@ export const FolioPage: React.FC = () => {
         </div>
 
         {/* Balance panel */}
-        <aside className="border border-[#201e1d]/40 bg-[#eae9e9] md:sticky md:top-6">
-          <div className="border-b-2 border-[#201e1d]/40 p-4">
-            <div className="text-[10px] font-semibold tracking-[.14em] text-[#ec3013] uppercase">
+        <aside className="overflow-hidden rounded-sm border border-gray-300 bg-white md:sticky md:top-6">
+          <div className="border-b border-gray-300 bg-white p-5">
+            <div className="text-xs font-bold tracking-[.16em] text-orange-500 uppercase">
               Running balance
             </div>
-            <h2 className="mt-1 text-xl font-extrabold tracking-tight">
+            <h2 className="mt-1 text-xl font-bold">
               Folio total
             </h2>
           </div>
 
-          <div className="flex flex-col gap-3 p-4">
+          <div className="space-y-4 p-5">
             <div className="flex items-baseline justify-between gap-3">
               <div>
                 <div className="text-sm">Room</div>
@@ -404,18 +405,18 @@ export const FolioPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-[#ec3013] p-4 text-[#f3f2f2]">
-            <div className="text-[10px] font-semibold tracking-[.14em] uppercase opacity-85">
+          <div className="bg-gray-900 p-5 text-white">
+            <div className="text-xs font-bold tracking-[.16em] uppercase opacity-70">
               {totals.refundDue !== "0.00" ? "Refund due" : "Balance due"}
             </div>
-            <div className="font-heading mt-2 text-[38px] leading-[.92] font-extrabold tracking-tight tabular-nums">
+            <div className="mt-2 text-4xl font-bold tracking-tight tabular-nums">
               {totals.refundDue !== "0.00"
                 ? formatPesoExact(totals.refundDue)
                 : formatPesoExact(totals.balance)}
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 border-t-2 border-[#201e1d]/40 p-4">
+          <div className="space-y-3 border-t border-gray-300 p-5">
             {folio.status === "CONFIRMED" ? (
               <FrontDeskButton
                 reservationId={folio.id}
