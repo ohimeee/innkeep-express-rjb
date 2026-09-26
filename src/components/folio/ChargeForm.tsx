@@ -1,9 +1,9 @@
 import { useState } from "react";
 
-import { postCharge } from "../api/folioService";
-import { CHARGE_DEPARTMENTS, DEPARTMENT_LABELS } from "../types";
-import type { ChargeDepartment } from "../types";
-import { Spinner } from "./Spinner";
+import { postCharge } from "../../api/folioService";
+import { CHARGE_DEPARTMENTS, DEPARTMENT_LABELS } from "../../types";
+import type { ChargeDepartment } from "../../types";
+import { Spinner } from "../Spinner";
 
 const FIELD_CLASSES =
   "w-full border border-[#201e1d]/40 bg-[#f3f2f2] px-3 py-2.5 text-sm text-[#201e1d]";
@@ -167,7 +167,7 @@ export const ChargeForm: React.FC<ChargeFormProps> = ({
       {error ? (
         <p
           role="alert"
-          className="mt-3 border-l-2 border-[#ec3013] bg-[#ec3013]/[.08] p-2.5 text-[12.5px] leading-snug text-[#b8250e]"
+          className="mt-3 border-l-2 border-[#ec3013] bg-[#ec3013]/8 p-2.5 text-[12.5px] leading-snug text-[#b8250e]"
         >
           {error}
         </p>

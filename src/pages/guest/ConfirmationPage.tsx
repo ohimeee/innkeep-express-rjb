@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useReducer, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
-import { cancelByCode, fetchReservationByCode } from "../api/reservationService";
+import {
+  cancelByCode,
+  fetchReservationByCode,
+} from "../../api/reservationService";
 import { Eye, EyeOff } from "lucide-react";
-import { StayDetails } from "../components/StayDetails";
-import { nights } from "../dates";
-import { formatPeso } from "../money";
-import { quoteStay } from "../pricing";
-import { typeLabel, type ReservationDetail } from "../types";
+import { StayDetails } from "../../components/StayDetails";
+import { nights } from "../../utils/dates";
+import { formatPeso } from "../../utils/money";
+import { quoteStay } from "../../utils/pricing";
+import { typeLabel, type ReservationDetail } from "../../types";
 
 interface State {
   reservation: ReservationDetail | null;
@@ -99,7 +102,7 @@ export const ConfirmationPage: React.FC = () => {
   const cancel = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const name = String(
-      new FormData(event.currentTarget).get("guestName") ?? ""
+      new FormData(event.currentTarget).get("guestName") ?? "",
     );
 
     setCancelling(true);
@@ -230,10 +233,7 @@ export const ConfirmationPage: React.FC = () => {
               <p className="text-xl font-bold">Extras on your room</p>
               <div className="mt-3 flex-col divide-y-2 divide-gray-400 border-2 border-gray-400">
                 {charges.map((charge) => (
-                  <div
-                    key={charge.id}
-                    className="flex justify-between p-3"
-                  >
+                  <div key={charge.id} className="flex justify-between p-3">
                     <span className="text-xs text-gray-500">
                       {charge.description}
                     </span>

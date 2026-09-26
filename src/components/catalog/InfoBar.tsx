@@ -2,14 +2,14 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
 
-import { addDays, today } from "../dates";
+import { addDays, today } from "../../utils/dates";
 import {
   MAX_GUESTS,
   MIN_GUESTS,
   parseSearch,
   toSearchParams,
   type RoomQuery,
-} from "../search";
+} from "../../utils/search";
 
 const FIELD_CLASSES =
   "w-full bg-transparent font-bold outline-none focus:text-orange-600";

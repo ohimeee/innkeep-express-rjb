@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { createWalkIn } from "../api/reservationService";
-import { fetchRooms } from "../api/roomService";
-import { addDays, today } from "../dates";
-import { formatPeso } from "../money";
-import { folioHref, MAX_GUESTS, MIN_GUESTS } from "../search";
-import { typeLabel, type Room } from "../types";
-import { Spinner } from "./Spinner";
+import { createWalkIn } from "../../api/reservationService";
+import { fetchRooms } from "../../api/roomService";
+import { addDays, today } from "../../utils/dates";
+import { formatPeso } from "../../utils/money";
+import { folioHref, MAX_GUESTS, MIN_GUESTS } from "../../utils/search";
+import { typeLabel, type Room } from "../../types";
+import { Spinner } from "../Spinner";
 
 const FIELD_CLASSES =
   "w-full border border-[#201e1d]/40 bg-[#f3f2f2] px-3 py-2.5 text-sm text-[#201e1d]";
@@ -249,7 +249,7 @@ export const WalkInForm: React.FC<WalkInFormProps> = ({ onTaken }) => {
       {error ? (
         <p
           role="alert"
-          className="mt-3 border-l-2 border-[#ec3013] bg-[#ec3013]/[.08] p-2.5 text-[12.5px] leading-snug text-[#b8250e]"
+          className="mt-3 border-l-2 border-[#ec3013] bg-[#ec3013]/8 p-2.5 text-[12.5px] leading-snug text-[#b8250e]"
         >
           {error}
         </p>

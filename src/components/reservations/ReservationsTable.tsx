@@ -3,15 +3,15 @@ import { useMemo, useState } from "react";
 
 import { HoldTimer } from "./HoldTimer";
 import { LifecycleButton } from "./LifecycleButton";
-import { folioHref } from "../search";
-import { formatStayDate } from "../dates";
-import { formatPeso } from "../money";
+import { folioHref } from "../../utils/search";
+import { formatStayDate } from "../../utils/dates";
+import { formatPeso } from "../../utils/money";
 
 import {
   RESERVATION_STATUSES,
   type Reservation,
   type ReservationStatus,
-} from "../types";
+} from "../../types";
 
 type Filter = "ALL" | ReservationStatus;
 
@@ -86,7 +86,10 @@ interface ReservationsTableProps {
  * one that does not. The rows arrive as a prop from
  * ReservationsPage, which is what talks to the API.
  */
-export const ReservationsTable: React.FC<ReservationsTableProps> = ({ rows, onChanged }) => {
+export const ReservationsTable: React.FC<ReservationsTableProps> = ({
+  rows,
+  onChanged,
+}) => {
   const [filter, setFilter] = useState<Filter>("ALL");
   const [search, setSearch] = useState("");
 
@@ -168,7 +171,7 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({ rows, onCh
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search guest, room number or IKX code"
-          className="min-w-[220px] flex-1 border border-[#201e1d]/40 bg-[#f3f2f2] px-3 py-2.5 text-[13px] text-[#201e1d]"
+          className="min-w-55 flex-1 border border-[#201e1d]/40 bg-[#f3f2f2] px-3 py-2.5 text-[13px] text-[#201e1d]"
         />
       </div>
 
@@ -258,7 +261,8 @@ export const ReservationsTable: React.FC<ReservationsTableProps> = ({ rows, onCh
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-3">
-                      {stay.status === "PENDING" || stay.status === "CONFIRMED" ? (
+                      {stay.status === "PENDING" ||
+                      stay.status === "CONFIRMED" ? (
                         <LifecycleButton
                           reservationId={stay.id}
                           action="CANCEL"

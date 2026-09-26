@@ -1,9 +1,9 @@
 import { useCallback, useContext, useEffect } from "react";
 
-import { ReservationContext } from "../context/ReservationContext";
-import { fetchReservations } from "../api/reservationService";
-import { ReservationsTable } from "../components/ReservationsTable";
-import { WalkInForm } from "../components/WalkInForm";
+import { ReservationContext } from "../../context/ReservationContext";
+import { fetchReservations } from "../../api/reservationService";
+import { ReservationsTable } from "../../components/reservations/ReservationsTable";
+import { WalkInForm } from "../../components/reservations/WalkInForm";
 
 export const ReservationsPage: React.FC = () => {
   const context = useContext(ReservationContext);

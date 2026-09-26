@@ -1,15 +1,15 @@
 import { useEffect, useReducer, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
-import { fetchRoom } from "../api/roomService";
-import { createReservation } from "../api/reservationService";
-import { BookingCard } from "../components/BookingCard";
-import { GuestDetails } from "../components/GuestDetails";
-import { StayDetails } from "../components/StayDetails";
-import { addDays, nights, today } from "../dates";
-import { quoteStay } from "../pricing";
-import { parseSearch } from "../search";
-import type { Room } from "../types";
+import { fetchRoom } from "../../api/roomService";
+import { createReservation } from "../../api/reservationService";
+import { BookingCard } from "../../components/checkout/BookingCard";
+import { GuestDetails } from "../../components/checkout/GuestDetails";
+import { StayDetails } from "../../components/StayDetails";
+import { addDays, nights, today } from "../../utils/dates";
+import { quoteStay } from "../../utils/pricing";
+import { parseSearch } from "../../utils/search";
+import type { Room } from "../../types";
 
 interface State {
   room: Room | null;

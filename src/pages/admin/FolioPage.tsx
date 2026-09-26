@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useReducer } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { fetchFolio } from "../api/folioService";
-import { ChargeForm } from "../components/ChargeForm";
-import { FrontDeskButton } from "../components/FrontDeskButton";
-import { MoveForm } from "../components/MoveForm";
-import { PaymentForm } from "../components/PaymentForm";
-import { formatLongDate, formatStamp } from "../dates";
-import { formatPesoExact } from "../money";
+import { fetchFolio } from "../../api/folioService";
+import { ChargeForm } from "../../components/folio/ChargeForm";
+import { FrontDeskButton } from "../../components/FrontDeskButton";
+import { MoveForm } from "../../components/folio/MoveForm";
+import { PaymentForm } from "../../components/folio/PaymentForm";
+import { formatLongDate, formatStamp } from "../../utils/dates";
+import { formatPesoExact } from "../../utils/money";
 import {
   DEPARTMENT_LABELS,
   PAYMENT_METHOD_LABELS,
   typeLabel,
   type Folio,
   type ReservationStatus,
-} from "../types";
+} from "../../types";
 
 const STATUS_LABEL: Record<ReservationStatus, string> = {
   PENDING: "ON HOLD",
@@ -387,8 +387,8 @@ export const FolioPage: React.FC = () => {
                         key={payment.id}
                         className="text-[11px] text-[#201e1d]/55 tabular-nums"
                       >
-                        {PAYMENT_METHOD_LABELS[payment.method]}{" "}
-                        · {formatStamp(new Date(payment.paidAt))}
+                        {PAYMENT_METHOD_LABELS[payment.method]} ·{" "}
+                        {formatStamp(new Date(payment.paidAt))}
                       </div>
                     ))}
                   </div>

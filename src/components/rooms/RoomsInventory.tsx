@@ -1,10 +1,10 @@
 import { useState } from "react";
 
-import { createRoom, updateRoom, type RoomInput } from "../api/roomService";
-import { formatPeso } from "../money";
-import { ROOM_TYPES, typeLabel } from "../types";
-import type { Room, RoomStatus, RoomType } from "../types";
-import { Spinner } from "./Spinner";
+import { createRoom, updateRoom, type RoomInput } from "../../api/roomService";
+import { formatPeso } from "../../utils/money";
+import { ROOM_TYPES, typeLabel } from "../../types";
+import type { Room, RoomStatus, RoomType } from "../../types";
+import { Spinner } from "../Spinner";
 
 const STATUS_CLASSES: Record<RoomStatus, string> = {
   AVAILABLE: "bg-[#ec3013] text-[#f3f2f2]",
@@ -125,7 +125,8 @@ export const RoomsInventory: React.FC<RoomsInventoryProps> = ({
       nightlyRate: draft.nightlyRate.trim(),
       status: draft.status,
       amenities: draft.amenities,
-      description: draft.description.trim() === "" ? null : draft.description.trim(),
+      description:
+        draft.description.trim() === "" ? null : draft.description.trim(),
       imageUrl: draft.imageUrl.trim() === "" ? null : draft.imageUrl.trim(),
       outOfService: draft.outOfService,
     };
@@ -254,7 +255,7 @@ export const RoomsInventory: React.FC<RoomsInventoryProps> = ({
                     key={room.id}
                     className={`border border-[#201e1d]/40 ${
                       draft.id === room.id
-                        ? "outline outline-2 -outline-offset-2 outline-[#ec3013]"
+                        ? "outline-2 -outline-offset-2 outline-[#ec3013]"
                         : ""
                     }`}
                   >
@@ -312,7 +313,6 @@ export const RoomsInventory: React.FC<RoomsInventoryProps> = ({
         {/* Add / edit form */}
         <aside className="border border-[#201e1d]/40 bg-[#eae9e9] md:sticky md:top-6">
           <form onSubmit={handleSubmit}>
-
             <div className="flex items-start justify-between gap-3 border-b-2 border-[#201e1d]/40 p-4">
               <div>
                 <div className="text-[10px] font-semibold tracking-[.14em] text-[#ec3013] uppercase">
@@ -361,7 +361,7 @@ export const RoomsInventory: React.FC<RoomsInventoryProps> = ({
                     placeholder="203"
                     className={`w-full border px-3 py-2.5 text-sm text-[#201e1d] tabular-nums ${
                       clash
-                        ? "border-[#ec3013] bg-[#ec3013]/[.06]"
+                        ? "border-[#ec3013] bg-[#ec3013]/6"
                         : "border-[#201e1d]/40 bg-[#f3f2f2]"
                     }`}
                   />
@@ -384,7 +384,7 @@ export const RoomsInventory: React.FC<RoomsInventoryProps> = ({
               </div>
 
               {clash && (
-                <div className="-mt-2 flex items-start gap-2 border-l-2 border-[#ec3013] bg-[#ec3013]/[.08] p-2.5">
+                <div className="-mt-2 flex items-start gap-2 border-l-2 border-[#ec3013] bg-[#ec3013]/8 p-2.5">
                   <svg
                     width="15"
                     height="15"
@@ -587,7 +587,9 @@ export const RoomsInventory: React.FC<RoomsInventoryProps> = ({
                 <input
                   type="checkbox"
                   checked={draft.outOfService}
-                  onChange={(event) => set("outOfService", event.target.checked)}
+                  onChange={(event) =>
+                    set("outOfService", event.target.checked)
+                  }
                 />
                 Out of service
               </label>
@@ -636,7 +638,7 @@ export const RoomsInventory: React.FC<RoomsInventoryProps> = ({
               {error ? (
                 <p
                   role="alert"
-                  className="-mt-2 border-l-2 border-[#ec3013] bg-[#ec3013]/[.08] p-2.5 text-[12.5px] leading-snug text-[#b8250e]"
+                  className="-mt-2 border-l-2 border-[#ec3013] bg-[#ec3013]/8 p-2.5 text-[12.5px] leading-snug text-[#b8250e]"
                 >
                   {error}
                 </p>

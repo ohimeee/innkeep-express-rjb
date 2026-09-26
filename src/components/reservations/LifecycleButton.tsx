@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-import { cancelReservation, markNoShow } from "../api/reservationService";
-import { Spinner } from "./Spinner";
+import { cancelReservation, markNoShow } from "../../api/reservationService";
+import { Spinner } from "../Spinner";
 
 interface LifecycleButtonProps {
   reservationId: string;

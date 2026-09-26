@@ -1,18 +1,18 @@
 import type { ReactNode } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
-import { GuestNavbar } from "./components/GuestNavbar";
-import { Sidebar } from "./components/Sidebar";
+import { GuestNavbar } from "./components/layout/GuestNavbar";
+import { Sidebar } from "./components/layout/Sidebar";
 import { RoomProvider } from "./context/RoomContext";
 import { ReservationProvider } from "./context/ReservationContext";
-import { CatalogPage } from "./pages/CatalogPage";
-import { CheckoutPage } from "./pages/CheckoutPage";
-import { ConfirmationPage } from "./pages/ConfirmationPage";
-import { FindBookingPage } from "./pages/FindBookingPage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { FolioPage } from "./pages/FolioPage";
-import { ReservationsPage } from "./pages/ReservationsPage";
-import { RoomsPage } from "./pages/RoomsPage";
+import { CatalogPage } from "./pages/guest/CatalogPage";
+import { CheckoutPage } from "./pages/guest/CheckoutPage";
+import { ConfirmationPage } from "./pages/guest/ConfirmationPage";
+import { FindBookingPage } from "./pages/guest/FindBookingPage";
+import { DashboardPage } from "./pages/admin/DashboardPage";
+import { FolioPage } from "./pages/admin/FolioPage";
+import { ReservationsPage } from "./pages/admin/ReservationsPage";
+import { RoomsPage } from "./pages/admin/RoomsPage";
 
 // The guest shell — navbar plus whichever page is routed beneath it.
 const GuestLayout: React.FC<{ children: ReactNode }> = ({ children }) => (
@@ -47,7 +47,10 @@ function MainApp() {
         <Route path="/find-booking" element={guest(<FindBookingPage />)} />
         <Route path="/admin" element={admin(<DashboardPage />)} />
         <Route path="/admin/rooms" element={admin(<RoomsPage />)} />
-        <Route path="/admin/reservations" element={admin(<ReservationsPage />)} />
+        <Route
+          path="/admin/reservations"
+          element={admin(<ReservationsPage />)}
+        />
         <Route
           path="/admin/reservations/:code"
           element={admin(<FolioPage />)}

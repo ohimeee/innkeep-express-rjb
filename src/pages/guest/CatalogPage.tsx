@@ -1,5 +1,5 @@
-import { InfoBar } from "../components/InfoBar";
-import { RoomList } from "../components/RoomList";
+import { InfoBar } from "../../components/catalog/InfoBar";
+import { RoomList } from "../../components/catalog/RoomList";
 
 export const CatalogPage: React.FC = () => {
   return (

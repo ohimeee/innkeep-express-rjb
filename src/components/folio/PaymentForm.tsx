@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-import { recordPayment, settleBalance } from "../api/folioService";
-import { Spinner } from "./Spinner";
+import { recordPayment, settleBalance } from "../../api/folioService";
+import { Spinner } from "../Spinner";
 
 const FIELD_CLASSES =
   "w-full border border-[#201e1d]/40 bg-[#f3f2f2] px-3 py-2.5 text-sm text-[#201e1d]";
@@ -194,7 +194,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       {error ? (
         <p
           role="alert"
-          className="border-l-2 border-[#ec3013] bg-[#ec3013]/[.08] p-2.5 text-[12.5px] leading-snug text-[#b8250e]"
+          className="border-l-2 border-[#ec3013] bg-[#ec3013]/8 p-2.5 text-[12.5px] leading-snug text-[#b8250e]"
         >
           {error}
         </p>

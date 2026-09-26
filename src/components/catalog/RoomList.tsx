@@ -1,9 +1,9 @@
 import { useContext, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import { RoomContext } from "../context/RoomContext";
-import { fetchRooms } from "../api/roomService";
-import { checkoutHref, parseSearch } from "../search";
+import { RoomContext } from "../../context/RoomContext";
+import { fetchRooms } from "../../api/roomService";
+import { checkoutHref, parseSearch } from "../../utils/search";
 import { RoomCard } from "./RoomCard";
 
 // The catalog grid. The search lives in the URL rather than in state, so a
@@ -35,7 +35,8 @@ export const RoomList: React.FC = () => {
     loadRooms();
   }, [dispatch, search]);
 
-  if (state.loading) return <p className="py-10 text-gray-500">Loading rooms...</p>;
+  if (state.loading)
+    return <p className="py-10 text-gray-500">Loading rooms...</p>;
 
   if (state.error)
     return (

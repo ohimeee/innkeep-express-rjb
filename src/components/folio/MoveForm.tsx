@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 
-import { moveReservation } from "../api/reservationService";
-import { fetchRooms } from "../api/roomService";
-import { formatPeso, toCentavos } from "../money";
-import { typeLabel, type Room } from "../types";
-import { Spinner } from "./Spinner";
+import { moveReservation } from "../../api/reservationService";
+import { fetchRooms } from "../../api/roomService";
+import { formatPeso, toCentavos } from "../../utils/money";
+import { typeLabel, type Room } from "../../types";
+import { Spinner } from "../Spinner";
 
 const FIELD_CLASSES =
   "w-full border border-[#201e1d]/40 bg-[#f3f2f2] px-3 py-2.5 text-sm text-[#201e1d]";
@@ -48,7 +48,11 @@ export const MoveForm: React.FC<MoveFormProps> = ({
 
     const loadRooms = async () => {
       try {
-        const free = await fetchRooms({ checkIn, checkOut, guests: guestCount });
+        const free = await fetchRooms({
+          checkIn,
+          checkOut,
+          guests: guestCount,
+        });
         setRooms(free);
         setChoice(free[0]?.id ?? "");
       } catch {
@@ -185,7 +189,7 @@ export const MoveForm: React.FC<MoveFormProps> = ({
       {error ? (
         <p
           role="alert"
-          className="border-l-2 border-[#ec3013] bg-[#ec3013]/[.08] p-2.5 text-[12.5px] leading-snug text-[#b8250e]"
+          className="border-l-2 border-[#ec3013] bg-[#ec3013]/8 p-2.5 text-[12.5px] leading-snug text-[#b8250e]"
         >
           {error}
         </p>

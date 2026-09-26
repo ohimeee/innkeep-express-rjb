@@ -1,4 +1,4 @@
-import { formatStayDate } from "../dates";
+import { formatStayDate } from "../utils/dates";
 
 interface StayDetailsProps {
   checkIn: string;

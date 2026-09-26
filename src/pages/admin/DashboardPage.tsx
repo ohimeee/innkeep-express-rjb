@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useReducer } from "react";
 import { Link } from "react-router-dom";
 
-import { fetchDashboard } from "../api/reservationService";
-import { FrontDeskButton } from "../components/FrontDeskButton";
-import { formatStamp, formatToday } from "../dates";
-import { formatPeso } from "../money";
-import { folioHref } from "../search";
-import type { DashboardData, Reservation } from "../types";
+import { fetchDashboard } from "../../api/reservationService";
+import { FrontDeskButton } from "../../components/FrontDeskButton";
+import { formatStamp, formatToday } from "../../utils/dates";
+import { formatPeso } from "../../utils/money";
+import { folioHref } from "../../utils/search";
+import type { DashboardData, Reservation } from "../../types";
 
 const plural = (count: number, word: string): string =>
   `${count} ${word}${count === 1 ? "" : "s"}`;

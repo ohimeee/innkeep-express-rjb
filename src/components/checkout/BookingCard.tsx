@@ -1,7 +1,7 @@
 import { ConfirmButton } from "./ConfirmButton";
-import type { Quote } from "../pricing";
-import { formatPeso } from "../money";
-import { typeLabel, type Room } from "../types";
+import type { Quote } from "../../utils/pricing";
+import { formatPeso } from "../../utils/money";
+import { typeLabel, type Room } from "../../types";
 
 interface BookingCardProps {
   room: Room;
@@ -35,7 +35,9 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               <p className="text-xs text-gray-500">{room.description}</p>
             </div>
             <div>
-              <p className="text-2xl font-bold">{formatPeso(room.nightlyRate)}</p>
+              <p className="text-2xl font-bold">
+                {formatPeso(room.nightlyRate)}
+              </p>
               <p className="text-xs text-gray-500">per night</p>
             </div>
           </div>

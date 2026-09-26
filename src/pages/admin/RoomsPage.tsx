@@ -1,12 +1,13 @@
 import { useCallback, useContext, useEffect } from "react";
 
-import { RoomContext } from "../context/RoomContext";
-import { fetchAllRooms } from "../api/roomService";
-import { RoomsInventory } from "../components/RoomsInventory";
+import { RoomContext } from "../../context/RoomContext";
+import { fetchAllRooms } from "../../api/roomService";
+import { RoomsInventory } from "../../components/rooms/RoomsInventory";
 
 export const RoomsPage: React.FC = () => {
   const context = useContext(RoomContext);
-  if (!context) throw new Error("RoomsPage must be used within a RoomProvider.");
+  if (!context)
+    throw new Error("RoomsPage must be used within a RoomProvider.");
   const { state, dispatch } = context;
 
   // The inventory shows every room — fully booked ones and ones taken out of

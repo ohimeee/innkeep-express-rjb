@@ -2,9 +2,9 @@ import { Link } from "react-router-dom";
 import { UserRound } from "lucide-react";
 import { MoveRight } from "lucide-react";
 
-import { formatStayDate } from "../dates";
-import { formatPeso } from "../money";
-import { typeLabel, type Room } from "../types";
+import { formatStayDate } from "../../utils/dates";
+import { formatPeso } from "../../utils/money";
+import { typeLabel, type Room } from "../../types";
 
 interface RoomCardProps {
   room: Room;
@@ -93,4 +93,3 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, href, searched }) => {
     </div>
   );
 };
-
