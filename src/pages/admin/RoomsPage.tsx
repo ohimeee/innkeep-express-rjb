@@ -28,11 +28,11 @@ export const RoomsPage: React.FC = () => {
   }, [loadRooms]);
 
   if (state.loading)
-    return <p className="py-10 text-[#201e1d]/55">Loading rooms...</p>;
+    return <p className="py-10 text-sm text-gray-500">Loading rooms...</p>;
 
   if (state.error)
     return (
-      <p role="alert" className="py-10 text-[#b8250e]">
+      <p role="alert" className="py-10 text-orange-500">
         Error: {state.error}
       </p>
     );
