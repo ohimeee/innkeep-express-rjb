@@ -2,10 +2,21 @@ import type { ChargeDepartment, Folio, PaymentMethod } from "../types";
 
 const API_BASE = 'http://localhost:3000/api';
 
+// Every folio call is front desk, so every one carries the staff token.
+const getHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+}
+
 // Keyed on the confirmation code — what the guest reads off their phone and
 // what the front desk types, so a folio URL is something a person can reach.
 export const fetchFolio = async (code: string): Promise<Folio> => {
-  const response = await fetch(`${API_BASE}/folio/${encodeURIComponent(code)}`);
+  const response = await fetch(`${API_BASE}/folio/${encodeURIComponent(code)}`, {
+    headers: getHeaders(),
+  });
   if (!response.ok) throw new Error('Failed to fetch folio');
   return response.json();
 };
@@ -24,7 +35,7 @@ export const postCharge = async (
 ): Promise<void> => {
   const response = await fetch(`${API_BASE}/folio/${reservationId}/charges`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders(),
     body: JSON.stringify(charge),
   });
   if (!response.ok) {
@@ -44,7 +55,7 @@ export const recordPayment = async (
 ): Promise<void> => {
   const response = await fetch(`${API_BASE}/folio/${reservationId}/payments`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders(),
     body: JSON.stringify(payment),
   });
   if (!response.ok) {
@@ -62,6 +73,7 @@ export const settleBalance = async (
 ): Promise<{ invoiceUrl: string }> => {
   const response = await fetch(`${API_BASE}/folio/${reservationId}/settle`, {
     method: 'POST',
+    headers: getHeaders(),
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));

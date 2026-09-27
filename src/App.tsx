@@ -1,9 +1,16 @@
-import type { ReactNode } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { useContext, type ReactNode } from "react";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 
 import { GuestFooter } from "./components/layout/GuestFooter";
 import { GuestNavbar } from "./components/layout/GuestNavbar";
 import { Sidebar } from "./components/layout/Sidebar";
+import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { RoomProvider } from "./context/RoomContext";
 import { ReservationProvider } from "./context/ReservationContext";
 import { CatalogPage } from "./pages/guest/CatalogPage";
@@ -12,6 +19,7 @@ import { ConfirmationPage } from "./pages/guest/ConfirmationPage";
 import { FindBookingPage } from "./pages/guest/FindBookingPage";
 import { DashboardPage } from "./pages/admin/DashboardPage";
 import { FolioPage } from "./pages/admin/FolioPage";
+import { LoginPage } from "./pages/admin/LoginPage";
 import { ReservationsPage } from "./pages/admin/ReservationsPage";
 import { RoomsPage } from "./pages/admin/RoomsPage";
 
@@ -26,14 +34,30 @@ const GuestLayout: React.FC<{ children: ReactNode }> = ({ children }) => (
   </>
 );
 
-// The staff shell. Unguarded for now — auth is the last phase and nothing else
-// depends on it. See IMPLEMENTATION2.md section 6.
-const AdminLayout: React.FC<{ children: ReactNode }> = ({ children }) => (
-  <div className="flex">
-    <Sidebar />
-    <main className="p-8">{children}</main>
-  </div>
-);
+// The staff shell, behind a sign-in. This guard is only the screen — the API
+// checks the token on every staff route, which is the half that keeps data
+// safe. Someone signed out is sent to the login page and brought back after.
+const AdminLayout: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("AdminLayout must be used within AuthProvider");
+  const location = useLocation();
+
+  if (!context.state.isAuthenticated)
+    return (
+      <Navigate
+        to="/admin/login"
+        replace
+        state={{ from: location.pathname + location.search }}
+      />
+    );
+
+  return (
+    <div className="flex">
+      <Sidebar />
+      <main className="flex-1 p-8">{children}</main>
+    </div>
+  );
+};
 
 const guest = (page: ReactNode) => <GuestLayout>{page}</GuestLayout>;
 const admin = (page: ReactNode) => <AdminLayout>{page}</AdminLayout>;
@@ -49,6 +73,7 @@ function MainApp() {
           element={guest(<ConfirmationPage />)}
         />
         <Route path="/find-booking" element={guest(<FindBookingPage />)} />
+        <Route path="/admin/login" element={<LoginPage />} />
         <Route path="/admin" element={admin(<DashboardPage />)} />
         <Route path="/admin/rooms" element={admin(<RoomsPage />)} />
         <Route
@@ -66,11 +91,13 @@ function MainApp() {
 
 function App() {
   return (
-    <RoomProvider>
-      <ReservationProvider>
-        <MainApp />
-      </ReservationProvider>
-    </RoomProvider>
+    <AuthProvider>
+      <RoomProvider>
+        <ReservationProvider>
+          <MainApp />
+        </ReservationProvider>
+      </RoomProvider>
+    </AuthProvider>
   );
 }
 

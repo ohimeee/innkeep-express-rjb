@@ -3,6 +3,15 @@ import { toSearchParams, type RoomQuery } from "../utils/search";
 
 const API_BASE = "http://localhost:3000/api";
 
+// Creating and editing rooms is staff-only on the API.
+const getHeaders = () => {
+  const token = localStorage.getItem("token");
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
+
 // GET — the catalog, filtered by dates and guest count when they are given.
 // Rooms out of service are left out; the guest side never wants them.
 export const fetchRooms = async (query: RoomQuery): Promise<Room[]> => {
@@ -42,7 +51,7 @@ export interface RoomInput {
 export const createRoom = async (input: RoomInput): Promise<Room> => {
   const response = await fetch(`${API_BASE}/rooms`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: getHeaders(),
     body: JSON.stringify(input),
   });
   if (!response.ok) throw new Error("Failed to create room");
@@ -55,7 +64,7 @@ export const updateRoom = async (
 ): Promise<Room> => {
   const response = await fetch(`${API_BASE}/rooms/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: getHeaders(),
     body: JSON.stringify(input),
   });
   if (!response.ok) throw new Error("Failed to update room");

@@ -6,14 +6,24 @@ import type {
 
 const API_BASE = 'http://localhost:3000/api';
 
+// The front desk's calls carry the staff token. Guest calls leave it off — a
+// guest has no account.
+const getHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+}
+
 export const fetchReservations = async (): Promise<Reservation[]> => {
-  const response = await fetch(`${API_BASE}/reservations`);
+  const response = await fetch(`${API_BASE}/reservations`, { headers: getHeaders() });
   if (!response.ok) throw new Error('Failed to fetch reservations');
   return response.json();
 };
 
 export const fetchDashboard = async (): Promise<DashboardData> => {
-  const response = await fetch(`${API_BASE}/dashboard`);
+  const response = await fetch(`${API_BASE}/dashboard`, { headers: getHeaders() });
   if (!response.ok) throw new Error('Failed to fetch dashboard');
   return response.json();
 };
@@ -23,6 +33,7 @@ export const fetchDashboard = async (): Promise<DashboardData> => {
 export const checkIn = async (id: string): Promise<void> => {
   const response = await fetch(`${API_BASE}/reservations/${id}/check-in`, {
     method: 'POST',
+    headers: getHeaders(),
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
@@ -35,6 +46,7 @@ export const checkIn = async (id: string): Promise<void> => {
 export const checkOut = async (id: string): Promise<void> => {
   const response = await fetch(`${API_BASE}/reservations/${id}/check-out`, {
     method: 'POST',
+    headers: getHeaders(),
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
@@ -94,7 +106,7 @@ export interface WalkIn extends NewBooking {
 export const createWalkIn = async (walkIn: WalkIn): Promise<Reservation> => {
   const response = await fetch(`${API_BASE}/reservations/walk-in`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders(),
     body: JSON.stringify(walkIn),
   });
   if (!response.ok) {
@@ -107,7 +119,7 @@ export const createWalkIn = async (walkIn: WalkIn): Promise<Reservation> => {
 const act = async (path: string, fallback: string, body?: unknown) => {
   const response = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    headers: getHeaders(),
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!response.ok) {
