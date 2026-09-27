@@ -1,3 +1,5 @@
+import { Lock } from "lucide-react";
+
 import { ConfirmButton } from "./ConfirmButton";
 import type { Quote } from "../../utils/pricing";
 import { formatPeso } from "../../utils/money";
@@ -15,11 +17,11 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   pending,
 }) => {
   return (
-    <div className="mt-5 flex w-full flex-col">
+    <div className="flex w-full flex-col lg:mt-5">
       <div className="aspect-2/1 overflow-hidden">
         <img
           className="h-full w-full object-cover"
-          src={room.imageUrl ?? "https://picsum.photos/200"}
+          src={room.imageUrl ?? "/rooms/default.jpg"}
           alt={room.name}
         />
       </div>
@@ -29,7 +31,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
           <p className="text-xs font-semibold text-orange-500">
             {typeLabel(room.type).toUpperCase()} | ROOM {room.number}
           </p>
-          <div className="flex items-center justify-between pb-5">
+          <div className="flex items-center justify-between gap-4 pb-5">
             <div>
               <p className="text-2xl font-bold">{room.name}</p>
               <p className="text-xs text-gray-500">{room.description}</p>
@@ -74,7 +76,21 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             </span>
           </div>
         </div>
-        <ConfirmButton pending={pending} />
+        <div className="flex flex-col">
+          <ConfirmButton pending={pending} />
+          <div className="mb-2 flex gap-2 text-xs text-gray-600">
+            <Lock className="mt-0.5 size-3 shrink-0" />
+            <p>
+              You pay on Xendit&apos;s secure page — card, GCash, Maya or online
+              banking. The room is held for 15 minutes while you do.
+            </p>
+          </div>
+          <p className="text-xs text-gray-500">
+            Plans change? Cancel from your booking page any time before
+            check-in and anything paid is refunded to the original payment
+            method.
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ import { GuestDetails } from "../../components/checkout/GuestDetails";
 import { StayDetails } from "../../components/StayDetails";
 import { addDays, nights, today } from "../../utils/dates";
 import { quoteStay } from "../../utils/pricing";
-import { parseSearch } from "../../utils/search";
+import { parseSearch, toSearchParams } from "../../utils/search";
 import type { Room } from "../../types";
 
 interface State {
@@ -57,6 +57,12 @@ export const CheckoutPage: React.FC = () => {
   const query = parseSearch(searchParams);
   const checkIn = query.checkIn ?? today();
   const checkOut = query.checkOut ?? addDays(checkIn, 1);
+
+  // Back to the catalog with the same search still in the URL, so changing the
+  // dates starts from what the guest already picked. The parsed query, not the
+  // tonight default above: a guest who browsed without dates goes back to every
+  // room, not a search they never ran.
+  const backHref = `/?${toSearchParams(query)}`;
 
   useEffect(() => {
     const loadRoom = async () => {
@@ -123,30 +129,34 @@ export const CheckoutPage: React.FC = () => {
 
   return (
     <div className="flex-col">
-      <div className="relative border-b-2 py-5">
-        <p className="text-xs font-medium text-orange-500">
-          RESERVATION CHECKOUT
-        </p>
-        <h1 className="text-4xl font-bold">Review &amp; confirm</h1>
+      <div className="flex flex-wrap items-end justify-between gap-2 border-b-2 py-5">
+        <div>
+          <p className="text-xs font-medium text-orange-500">
+            RESERVATION CHECKOUT
+          </p>
+          <h1 className="text-3xl font-bold sm:text-4xl">Review &amp; confirm</h1>
+        </div>
         <Link
-          to="/"
-          className="absolute right-0 bottom-0 mb-5 font-bold tracking-tighter text-orange-500 hover:text-orange-300"
+          to={backHref}
+          className="font-bold tracking-tighter text-orange-500 hover:text-orange-300"
         >
           {"<"} Back to rooms
         </Link>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col">
-        <div className="flex gap-8">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
           <div className="flex-2 flex-col">
             <StayDetails
               checkIn={checkIn}
               checkOut={checkOut}
               nights={quote.nights}
+              guests={query.guests}
+              changeHref={`${backHref}#stay-search`}
             />
             <GuestDetails />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 lg:sticky lg:top-4">
             <BookingCard room={room} quote={quote} pending={pending} />
           </div>
         </div>

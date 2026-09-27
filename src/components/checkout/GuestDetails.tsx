@@ -2,7 +2,7 @@ export const GuestDetails: React.FC = () => {
   return (
     <div className="flex flex-col">
       <p className="mt-5 text-xl font-bold">Guest details</p>
-      <p className="my-2 w-1/2 text-xs text-gray-500">
+      <p className="my-2 max-w-sm text-xs text-gray-500">
         The reservation is held under this name. Enter it exactly as it appears
         on the ID presented at check-in.
       </p>
@@ -12,7 +12,7 @@ export const GuestDetails: React.FC = () => {
       {/* `name` is what puts this in the FormData the checkout page reads.
           Without it the field is not submitted at all. */}
       <input
-        className="w-3/4 border-2 border-gray-400 bg-gray-200 p-2"
+        className="w-full border-2 border-gray-400 bg-white p-2 outline-none focus:border-orange-500 sm:w-3/4"
         type="text"
         id="full-name"
         name="guestName"
