@@ -34,7 +34,14 @@ export const formatStayDate = (date: string): string =>
     timeZone: "UTC",
   });
 
-export const today = (): string => toDateString(new Date());
+/**
+ * The hotel's calendar day, not UTC's. `toDateString(new Date())` would read
+ * the UTC date, which in Manila is still yesterday until 8 AM — so a guest
+ * booking after midnight was offered last night as check-in. en-CA formats as
+ * YYYY-MM-DD.
+ */
+export const today = (): string =>
+  new Date().toLocaleDateString("en-CA", { timeZone: HOTEL_TIME_ZONE });
 
 export const addDays = (date: string, days: number): string =>
   toDateString(new Date(toUtcDate(date).getTime() + days * MS_PER_DAY));
