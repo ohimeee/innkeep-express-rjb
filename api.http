@@ -7,6 +7,9 @@
 #
 # Requests marked WRITES change the shared team database. Read them before
 # clicking.
+#
+# Staff routes want a token. Send "Staff — sign in" once and every request
+# below that carries {{token}} uses it for the next hour.
 
 @baseUrl = http://localhost:3000/api
 
@@ -18,6 +21,49 @@
 @roomId = 3c098f7a-4ab5-4a17-96e7-890225b9872c
 @code = IKX-7265
 @reservationId = 237b556a-40e7-41c9-a49a-b9006faaabba
+
+@token = {{login.response.body.token}}
+
+
+###############################################################################
+# Staff accounts — there is no sign-up screen, accounts are made here
+###############################################################################
+
+### Staff — sign in
+# Swap in a real username and password before sending, and do not commit them.
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "frontdesk",
+  "password": "change-me"
+}
+
+### Staff — add an account — WRITES
+# Open without a token only while there are no staff yet, which is how the very
+# first account is made. After that, sign in above first: the API refuses
+# anyone else, so nobody can hand themselves the front desk.
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "username": "frontdesk",
+  "password": "change-me"
+}
+
+### Staff — sign in with a short password — expects 400 from Zod
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "ab",
+  "password": "123"
+}
+
+### Staff route with no token — expects 401
+GET {{baseUrl}}/dashboard
 
 
 ###############################################################################
@@ -37,15 +83,18 @@ GET {{baseUrl}}/rooms/{{roomId}}
 
 ### Reservations — the admin list
 GET {{baseUrl}}/reservations
+Authorization: Bearer {{token}}
 
 ### Reservations — guest lookup by confirmation code
 GET {{baseUrl}}/reservations/code/{{code}}
 
 ### Folio — the whole bill
 GET {{baseUrl}}/folio/{{code}}
+Authorization: Bearer {{token}}
 
 ### Dashboard — arrivals, departures, occupancy
 GET {{baseUrl}}/dashboard
+Authorization: Bearer {{token}}
 
 
 ###############################################################################
@@ -67,6 +116,7 @@ Content-Type: application/json
 ### Charge with a nonsense amount — expects 400
 POST {{baseUrl}}/folio/{{reservationId}}/charges
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "description": "Minibar",
@@ -85,6 +135,7 @@ Content-Type: application/json
 
 ### Unknown confirmation code — expects 404
 GET {{baseUrl}}/folio/IKX-0000
+Authorization: Bearer {{token}}
 
 
 ###############################################################################
@@ -109,6 +160,7 @@ Content-Type: application/json
 ### Add a room — WRITES
 POST {{baseUrl}}/rooms
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "number": "999",
@@ -126,6 +178,7 @@ Content-Type: application/json
 # The body is room 104 exactly as seeded, so this is a no-op unless you edit it.
 PUT {{baseUrl}}/rooms/{{roomId}}
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "number": "104",
@@ -136,18 +189,20 @@ Content-Type: application/json
   "status": "AVAILABLE",
   "amenities": ["Twin beds", "City view"],
   "description": "Twin beds | City view | Sleeps 2",
-  "imageUrl": null
+  "imageUrl": "/rooms/104.jpg"
 }
 
 ### Check in — WRITES
 # Moves the reservation to CHECKED_IN and the room to OCCUPIED in one
 # transaction. Refused unless the booking is CONFIRMED.
 POST {{baseUrl}}/reservations/{{reservationId}}/check-in
+Authorization: Bearer {{token}}
 
 ### Post an incidental — WRITES
 # VAT-inclusive. Only a checked-in or departed guest can be charged.
 POST {{baseUrl}}/folio/{{reservationId}}/charges
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "description": "Minibar — soft drinks",
@@ -159,6 +214,7 @@ Content-Type: application/json
 ### Record a payment at the desk — WRITES
 POST {{baseUrl}}/folio/{{reservationId}}/payments
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "amount": "450",
@@ -168,6 +224,7 @@ Content-Type: application/json
 ### Check out — WRITES
 # Refused while a balance is owed; the error names the amount.
 POST {{baseUrl}}/reservations/{{reservationId}}/check-out
+Authorization: Bearer {{token}}
 
 ### Webhook with the real token — WRITES
 # This is what confirms a booking. Point external_id at a PENDING reservation.
