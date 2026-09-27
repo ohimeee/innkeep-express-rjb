@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
+import { GuestFooter } from "./components/layout/GuestFooter";
 import { GuestNavbar } from "./components/layout/GuestNavbar";
 import { Sidebar } from "./components/layout/Sidebar";
 import { RoomProvider } from "./context/RoomContext";
@@ -18,7 +19,10 @@ import { RoomsPage } from "./pages/admin/RoomsPage";
 const GuestLayout: React.FC<{ children: ReactNode }> = ({ children }) => (
   <>
     <GuestNavbar />
-    <main className="mx-30 mb-8 min-h-screen">{children}</main>
+    <main className="mx-auto mb-8 min-h-screen w-full max-w-6xl px-4 sm:px-8">
+      {children}
+    </main>
+    <GuestFooter />
   </>
 );
 
