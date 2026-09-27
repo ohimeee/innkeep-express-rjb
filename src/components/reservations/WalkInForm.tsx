@@ -89,7 +89,7 @@ export const WalkInForm: React.FC<WalkInFormProps> = ({ onTaken }) => {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="font-heading mt-6 inline-flex items-center gap-2 bg-[#ec3013] px-4 py-3 text-[13px] font-extrabold text-[#f3f2f2] hover:bg-[#d32a10]"
+        className="font-heading mt-6 inline-flex items-center gap-2 bg-orange-500 px-4 py-3 text-[13px] font-extrabold text-[#f3f2f2] hover:bg-orange-600"
       >
         Take a booking
         <svg
@@ -194,8 +194,8 @@ export const WalkInForm: React.FC<WalkInFormProps> = ({ onTaken }) => {
           className={[
             "font-heading flex items-center justify-between gap-2 px-4 py-2.5 text-[13px] font-extrabold text-[#f3f2f2]",
             saving || rooms.length === 0
-              ? "cursor-not-allowed bg-[#ec3013]/45"
-              : "cursor-pointer bg-[#ec3013]",
+              ? "cursor-not-allowed bg-orange-600"
+              : "cursor-pointer bg-orange-500",
           ].join(" ")}
         >
           <span className="flex items-center gap-2">

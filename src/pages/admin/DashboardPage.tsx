@@ -129,7 +129,7 @@ export const DashboardPage: React.FC = () => {
         <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
-            <p className="mt-2 text-sm">
+            <p className="mt-2 text-sm text-gray-500">
               Manage today's arrivals, departures, and room activity.
             </p>
           </div>

@@ -29,15 +29,22 @@ export const ReservationsPage: React.FC = () => {
   }, [loadReservations]);
 
   return (
-    <div>
-      <div className="text-[11px] font-semibold tracking-[.14em] text-[#ec3013] uppercase">
-        Bookings
+    <div className="space-y-8">
+      <div>
+        <div className="text-xs font-bold tracking-widest text-orange-500 uppercase">
+          Bookings
+        </div>
+        <h1 className="mt-1 text-3xl font-bold">Reservations</h1>
+
+        <p className="mt-1 text-sm text-gray-500">
+          Manage guest reservations, holds, and walk-in bookings.
+        </p>
       </div>
 
       {state.loading ? (
-        <p className="py-10 text-[#201e1d]/55">Loading reservations...</p>
+        <p className="py-10 text-sm text-gray-500">Loading reservations...</p>
       ) : state.error ? (
-        <p role="alert" className="py-10 text-[#b8250e]">
+        <p role="alert" className="py-10 text-sm text-orange-500">
           Error: {state.error}
         </p>
       ) : (
