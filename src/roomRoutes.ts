@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { pool } from './db';
 import { validateResource } from './validate';
 import { createRoomSchema, updateRoomSchema } from './schemas';
+import { authenticateToken } from './authMiddleware';
 
 const router = Router();
 
@@ -108,7 +109,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // POST
-router.post("/", validateResource(createRoomSchema), async (req: Request, res: Response) => {
+router.post("/", authenticateToken, validateResource(createRoomSchema), async (req: Request, res: Response) => {
   const { number, name, type, capacity, nightlyRate, status, amenities, description, imageUrl, outOfService } = req.body;
   try {
     const result = await pool.query(
@@ -131,7 +132,7 @@ router.post("/", validateResource(createRoomSchema), async (req: Request, res: R
 });
 
 // PUT
-router.put("/:id", validateResource(updateRoomSchema), async (req: Request, res: Response) => {
+router.put("/:id", authenticateToken, validateResource(updateRoomSchema), async (req: Request, res: Response) => {
   const { id } = req.params;
   const { number, name, type, capacity, nightlyRate, status, amenities, description, imageUrl, outOfService } = req.body;
   try {

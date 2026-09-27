@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { pool } from './db';
 import { toCentavos, toMoney } from './money';
+import { authenticateToken } from './authMiddleware';
 import {
   BALANCE_EXPRESSION,
   LIST_COLUMNS,
@@ -15,7 +16,7 @@ const router = Router();
 // "Today" is the database's date, not the browser's. A front desk in Manila and
 // a dev machine left on UTC would otherwise disagree about whose arrivals these
 // are, and the guest standing at the counter is the one who is right.
-router.get("/", async (_req: Request, res: Response) => {
+router.get("/", authenticateToken, async (_req: Request, res: Response) => {
   try {
     await releaseExpiredHolds();
 

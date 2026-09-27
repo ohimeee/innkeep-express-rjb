@@ -6,6 +6,7 @@ import { nights } from './dates';
 import { fromCentavos, toCentavos } from './money';
 import { createInvoice } from './payments';
 import { BALANCE_EXPRESSION } from './reservationRoutes';
+import { authenticateToken } from './authMiddleware';
 
 const router = Router();
 
@@ -82,7 +83,7 @@ export const readLedger = async (
 // Three round trips rather than one join, deliberately: joining a reservation
 // to both its charges and its payments multiplies the rows together, and the
 // two sums would then each count the other table's rows.
-router.get("/:code", async (req: Request, res: Response) => {
+router.get("/:code", authenticateToken, async (req: Request, res: Response) => {
   const { code } = req.params;
   try {
     const found = await pool.query(
@@ -124,7 +125,7 @@ router.get("/:code", async (req: Request, res: Response) => {
 // would reopen a balance on a guest who has already gone, with nobody at the
 // desk to pay it and no way to reach them. Real hotels do post late charges,
 // but they have a card on file to bill and this does not.
-router.post("/:id/charges", validateResource(createChargeSchema), async (req: Request, res: Response) => {
+router.post("/:id/charges", authenticateToken, validateResource(createChargeSchema), async (req: Request, res: Response) => {
   const { id } = req.params;
   const { description, department, amount, postedBy } = req.body;
   try {
@@ -162,7 +163,7 @@ router.post("/:id/charges", validateResource(createChargeSchema), async (req: Re
 // webhook a no-op, and cash handed over a counter has no event to deduplicate
 // against. The unique index is partial precisely so these rows do not all
 // collide on NULL.
-router.post("/:id/payments", validateResource(createPaymentSchema), async (req: Request, res: Response) => {
+router.post("/:id/payments", authenticateToken, validateResource(createPaymentSchema), async (req: Request, res: Response) => {
   const { id } = req.params;
   const { amount, method } = req.body;
   try {
@@ -194,7 +195,7 @@ router.post("/:id/payments", validateResource(createPaymentSchema), async (req: 
 //
 // The amount is computed here from the ledger, never taken from the request —
 // the same rule the booking path follows.
-router.post("/:id/settle", async (req: Request, res: Response) => {
+router.post("/:id/settle", authenticateToken, async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const found = await pool.query(

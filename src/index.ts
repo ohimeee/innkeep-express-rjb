@@ -6,6 +6,7 @@ import reservationRoutes from './reservationRoutes';
 import folioRoutes from './folioRoutes';
 import dashboardRoutes from './dashboardRoutes';
 import webhookRoutes from './webhookRoutes';
+import authRoutes from './authRoutes';
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use('/api/reservations', reservationRoutes);
 app.use('/api/folio', folioRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/webhooks', webhookRoutes);
+app.use('/api/auth', authRoutes);
 
 app.listen(PORT, () => {
   console.log(`InnKeep Express API running on http://localhost:${PORT}`);

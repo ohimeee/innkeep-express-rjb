@@ -193,3 +193,15 @@ export const moveReservationSchema = z.object({
   body: moveBodySchema,
   params: z.object({ id: z.string().min(1) }),
 });
+
+// Staff sign-in and account creation.
+export const authBodySchema = z.object({
+  username: z.string().trim().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export const authRequestSchema = z.object({
+  body: authBodySchema,
+});
+
+export type AuthInput = z.infer<typeof authBodySchema>;

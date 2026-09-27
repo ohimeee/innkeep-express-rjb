@@ -7,6 +7,7 @@ import { toCentavos, toMoney } from './money';
 import { quoteStay } from './pricing';
 import { createInvoice } from './payments';
 import { readLedger } from './folioRoutes';
+import { authenticateToken } from './authMiddleware';
 
 const router = Router();
 
@@ -74,7 +75,7 @@ const withNights = (row: any) => ({
 
 // GET — every reservation, newest first. The status filter and the search stay
 // in the client; at this property's size the whole table is a few hundred rows.
-router.get("/", async (_req: Request, res: Response) => {
+router.get("/", authenticateToken, async (_req: Request, res: Response) => {
   try {
     await releaseExpiredHolds();
     const result = await pool.query(
@@ -262,7 +263,7 @@ const occupantOf = async (
 // separate calls can half-fail and leave a CONFIRMED booking beside a room
 // still reading AVAILABLE with somebody's luggage in it. Unticked, this books a
 // stay for later — someone phoning ahead.
-router.post("/walk-in", validateResource(createWalkInSchema), async (req: Request, res: Response) => {
+router.post("/walk-in", authenticateToken, validateResource(createWalkInSchema), async (req: Request, res: Response) => {
   const { roomId, guestName, guestCount, checkIn, checkOut, checkInNow } = req.body;
   try {
     await releaseExpiredHolds();
@@ -356,7 +357,7 @@ router.post("/walk-in", validateResource(createWalkInSchema), async (req: Reques
 // The exclusion constraint does the hard part: if the target room is taken for
 // these dates the UPDATE is refused outright with 23P01, so no check-then-write
 // race exists here either.
-router.post("/:id/move", validateResource(moveReservationSchema), async (req: Request, res: Response) => {
+router.post("/:id/move", authenticateToken, validateResource(moveReservationSchema), async (req: Request, res: Response) => {
   const { id } = req.params;
   const { roomId } = req.body;
 
@@ -465,7 +466,7 @@ router.post("/:id/move", validateResource(moveReservationSchema), async (req: Re
 // Money already taken is reported, not reversed. Refunding through Xendit is a
 // separate operation, and quietly marking a paid booking cancelled while
 // saying nothing about the money would be the worst of both.
-router.post("/:id/cancel", async (req: Request, res: Response) => {
+router.post("/:id/cancel", authenticateToken, async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const found = await pool.query(
@@ -529,7 +530,7 @@ router.post("/:id/cancel", async (req: Request, res: Response) => {
 // simply not here yet. Without this a no-show sits CONFIRMED forever, invisible
 // on a dashboard that only shows today's arrivals, blocking its room for dates
 // already in the past.
-router.post("/:id/no-show", async (req: Request, res: Response) => {
+router.post("/:id/no-show", authenticateToken, async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const found = await pool.query(
@@ -639,7 +640,7 @@ router.post("/code/:code/cancel", async (req: Request, res: Response) => {
 // room reading AVAILABLE with somebody's luggage in it. The UPDATE is guarded
 // on CONFIRMED rather than checked beforehand, which makes a double-click a
 // no-op instead of a second check-in with a later timestamp.
-router.post("/:id/check-in", async (req: Request, res: Response) => {
+router.post("/:id/check-in", authenticateToken, async (req: Request, res: Response) => {
   const { id } = req.params;
   const client = await pool.connect();
   try {
@@ -702,7 +703,7 @@ router.post("/:id/check-in", async (req: Request, res: Response) => {
 // transaction as the update, so a charge posted a moment ago cannot slip past
 // the check, and the amount comes back with the error so the front desk sees
 // what to collect rather than a bare refusal.
-router.post("/:id/check-out", async (req: Request, res: Response) => {
+router.post("/:id/check-out", authenticateToken, async (req: Request, res: Response) => {
   const { id } = req.params;
   const client = await pool.connect();
   try {

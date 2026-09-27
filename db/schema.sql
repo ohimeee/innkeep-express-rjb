@@ -253,3 +253,15 @@ DO $$ BEGIN
       ) WHERE ("status" IN ('PENDING', 'CONFIRMED', 'CHECKED_IN'));
   END IF;
 END $$;
+
+-- Front-desk staff. Guests have no account — a booking is reached by its
+-- confirmation code — so everyone in this table can open /admin.
+--
+-- Only the bcrypt hash is stored. The plain password never reaches the
+-- database, so a leaked dump does not hand anyone a working login.
+CREATE TABLE IF NOT EXISTS "User" (
+  "id"           TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  "username"     TEXT NOT NULL UNIQUE,
+  "passwordHash" TEXT NOT NULL,
+  "createdAt"    TIMESTAMP NOT NULL DEFAULT now()
+);
