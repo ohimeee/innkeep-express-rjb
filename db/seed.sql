@@ -6,19 +6,24 @@
 --
 -- Apply with:  npm run db:seed
 
-INSERT INTO "Room" ("number", "name", "type", "capacity", "amenities", "description", "nightlyRate", "status")
+-- Photos live in the frontend at public/rooms/<number>.jpg, so "imageUrl" is a
+-- path the Vite server answers, not a hotlink that can rot. Sources: Ann Hotel
+-- Phu Quoc (103), Marriott (104), Portola Hotel (201), Eden Resort (202),
+-- Grand Hotel New Orleans (305), 33 Hotel (402), galaxy.tf hotel kitchenette
+-- (501), Taj Exotica Dubai (502).
+INSERT INTO "Room" ("number", "name", "type", "capacity", "amenities", "description", "nightlyRate", "status", "imageUrl")
 VALUES
-  ('402', 'The Garret Suite',  'SUITE',    2, ARRAY['King bed', 'Skylight', 'Free breakfast'],  'King bed | Top floor | Sleeps 2',            8900, 'AVAILABLE'),
-  ('501', 'Atelier Suite',     'SUITE',    4, ARRAY['2 bedrooms', 'Kitchenette', 'Balcony'],    'Two bedrooms | Kitchenette | Sleeps 4',      10500, 'AVAILABLE'),
-  ('201', 'Courtyard Deluxe',  'DELUXE',   2, ARRAY['Queen bed', 'Courtyard view', 'Minibar'],  'Queen bed | Courtyard view | Sleeps 2',      6400, 'AVAILABLE'),
-  ('202', 'Courtyard Deluxe',  'DELUXE',   2, ARRAY['Queen bed', 'Courtyard view', 'Minibar'],  'Queen bed | Courtyard view | Sleeps 2',      6400, 'AVAILABLE'),
-  ('305', 'Loft Deluxe',       'DELUXE',   3, ARRAY['King bed', 'Workspace', 'Free breakfast'], 'King bed | Loft workspace | Sleeps 3',       7100, 'AVAILABLE'),
-  ('104', 'Harbor Standard',   'STANDARD', 2, ARRAY['Twin beds', 'City view'],                  'Twin beds | City view | Sleeps 2',           4200, 'AVAILABLE'),
-  ('103', 'Archive Standard',  'STANDARD', 1, ARRAY['Single bed', 'Reading nook'],              'Single bed | Reading nook | Sleeps 1',       3600, 'AVAILABLE'),
+  ('402', 'The Garret Suite',  'SUITE',    2, ARRAY['King bed', 'Skylight', 'Free breakfast'],  'King bed | Top floor | Sleeps 2',            8900, 'AVAILABLE', '/rooms/402.jpg'),
+  ('501', 'Atelier Suite',     'SUITE',    4, ARRAY['2 bedrooms', 'Kitchenette', 'Balcony'],    'Two bedrooms | Kitchenette | Sleeps 4',      10500, 'AVAILABLE', '/rooms/501.jpg'),
+  ('201', 'Courtyard Deluxe',  'DELUXE',   2, ARRAY['Queen bed', 'Courtyard view', 'Minibar'],  'Queen bed | Courtyard view | Sleeps 2',      6400, 'AVAILABLE', '/rooms/201.jpg'),
+  ('202', 'Courtyard Deluxe',  'DELUXE',   2, ARRAY['Queen bed', 'Courtyard view', 'Minibar'],  'Queen bed | Courtyard view | Sleeps 2',      6400, 'AVAILABLE', '/rooms/202.jpg'),
+  ('305', 'Loft Deluxe',       'DELUXE',   3, ARRAY['King bed', 'Workspace', 'Free breakfast'], 'King bed | Loft workspace | Sleeps 3',       7100, 'AVAILABLE', '/rooms/305.jpg'),
+  ('104', 'Harbor Standard',   'STANDARD', 2, ARRAY['Twin beds', 'City view'],                  'Twin beds | City view | Sleeps 2',           4200, 'AVAILABLE', '/rooms/104.jpg'),
+  ('103', 'Archive Standard',  'STANDARD', 1, ARRAY['Single bed', 'Reading nook'],              'Single bed | Reading nook | Sleeps 1',       3600, 'AVAILABLE', '/rooms/103.jpg'),
   -- A second room sleeping four. With only one, a party of four had nowhere to
   -- go if it broke or was already taken — no fallback for the largest booking
   -- the app accepts.
-  ('502', 'Harbour Suite',     'SUITE',    4, ARRAY['2 bedrooms', 'Sea view', 'Free breakfast'], 'Two bedrooms | Sea view | Sleeps 4',          9800, 'AVAILABLE')
+  ('502', 'Harbour Suite',     'SUITE',    4, ARRAY['2 bedrooms', 'Sea view', 'Free breakfast'], 'Two bedrooms | Sea view | Sleeps 4',          9800, 'AVAILABLE', '/rooms/502.jpg')
 
 -- Every room seeds AVAILABLE, and "status" is deliberately absent from the
 -- update list below.
@@ -43,4 +48,7 @@ ON CONFLICT ("number") DO UPDATE SET
   "capacity"    = EXCLUDED."capacity",
   "amenities"   = EXCLUDED."amenities",
   "description" = EXCLUDED."description",
-  "nightlyRate" = EXCLUDED."nightlyRate";
+  "nightlyRate" = EXCLUDED."nightlyRate",
+  -- Only fills a missing photo. One picked in the admin rooms screen survives
+  -- a re-seed.
+  "imageUrl"    = COALESCE("Room"."imageUrl", EXCLUDED."imageUrl");
