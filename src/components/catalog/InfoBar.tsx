@@ -12,7 +12,7 @@ import {
 } from "../../utils/search";
 
 const FIELD_CLASSES =
-  "w-full bg-transparent font-bold outline-none focus:text-orange-600";
+  "w-full bg-transparent font-bold outline-none focus:text-orange-600 data-[empty=true]:font-normal data-[empty=true]:text-gray-400";
 
 // The availability search.
 //
@@ -68,7 +68,7 @@ export const InfoBar: React.FC = () => {
   return (
     // The id is what the "Other dates" link on a booked room jumps to.
     <form id="stay-search" onSubmit={submit} className="my-5 scroll-mt-4">
-      <div className="flex flex-col divide-y-2 divide-gray-400 border-2 border-gray-400 sm:flex-row sm:divide-x-2 sm:divide-y-0">
+      <div className="flex flex-col divide-y-2 divide-gray-400 border-2 border-gray-400 bg-white shadow-lg sm:flex-row sm:divide-x-2 sm:divide-y-0">
         <div className="flex-3 p-3">
           <label htmlFor="checkIn" className="text-xs">
             Check-in
@@ -79,6 +79,9 @@ export const InfoBar: React.FC = () => {
             value={checkIn}
             min={today()}
             onChange={(event) => setCheckIn(event.target.value)}
+            // A native date input has no placeholder, so an empty one reads
+            // "mm/dd/yyyy". Grey that out until a date is picked.
+            data-empty={checkIn === ""}
             className={FIELD_CLASSES}
           />
         </div>
@@ -95,6 +98,7 @@ export const InfoBar: React.FC = () => {
             // day after whatever check-in currently says.
             min={checkIn ? addDays(checkIn, 1) : addDays(today(), 1)}
             onChange={(event) => setCheckOut(event.target.value)}
+            data-empty={checkOut === ""}
             className={FIELD_CLASSES}
           />
         </div>

@@ -42,13 +42,20 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, href, searched }) => {
       <div className="h-1/2 overflow-hidden">
         <img
           className={`h-full w-full object-cover ${bookable ? "" : "opacity-50 grayscale"}`}
-          src={room.imageUrl ?? "https://picsum.photos/200"}
+          src={room.imageUrl ?? "/rooms/default.jpg"}
           alt={room.name}
         />
       </div>
 
       <div className="flex-col space-y-2 bg-gray-200 p-3">
-        <span className="text-lg font-bold">{room.name}</span>
+        {/* The number tells apart two rooms that share a name, like the
+            Courtyard Deluxes. */}
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-lg font-bold">{room.name}</span>
+          <span className="text-xs whitespace-nowrap text-gray-500">
+            Room {room.number}
+          </span>
+        </div>
 
         <div className="flex items-center gap-2">
           <UserRound className="size-3" />

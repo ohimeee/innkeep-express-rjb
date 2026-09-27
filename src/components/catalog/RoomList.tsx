@@ -35,8 +35,25 @@ export const RoomList: React.FC = () => {
     loadRooms();
   }, [dispatch, search]);
 
+  // Card-shaped placeholders, so the grid does not jump when the rooms land.
   if (state.loading)
-    return <p className="py-10 text-gray-500">Loading rooms...</p>;
+    return (
+      <div
+        aria-label="Loading rooms"
+        className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        {Array.from({ length: 6 }, (_, i) => (
+          <div key={i} className="flex aspect-6/5 animate-pulse flex-col">
+            <div className="h-1/2 bg-gray-300" />
+            <div className="flex-1 space-y-3 bg-gray-200 p-3">
+              <div className="h-5 w-2/3 bg-gray-300" />
+              <div className="h-3 w-1/4 bg-gray-300" />
+              <div className="h-6 w-1/2 bg-gray-300" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
 
   if (state.error)
     return (
